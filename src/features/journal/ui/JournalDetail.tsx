@@ -1,30 +1,40 @@
+'use client';
+
 import Link from 'next/link';
 import { Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useLocale } from '@/features/locale';
 import {
-  HORIZON_LABELS,
-  SENTIMENT_LABELS,
-  TRADE_TYPE_LABELS,
+  formatDateTime,
+  formatNumber as formatLocaleNumber,
+  type LocaleSettings,
+} from '@/shared/lib/locale';
+import {
+  type Horizon,
   type Journal,
+  type RiskCheck,
+  type TradeType,
 } from '../model/types';
 import { DeleteJournalButton } from './DeleteJournalButton';
 import { MarkdownPreview } from './MarkdownPreview';
 
-function formatNumber(s: string | null): string | null {
+function formatNumber(s: string | null, locale: Pick<LocaleSettings, 'locale'>): string | null {
   if (s == null) return null;
   const n = Number(s);
-  return Number.isFinite(n) ? n.toLocaleString() : s;
+  return Number.isFinite(n) ? formatLocaleNumber(n, locale) : s;
 }
 
 export function JournalDetail({ journal }: { journal: Journal }) {
+  const locale = useLocale();
+  const { t } = locale;
   const trade = {
-    qty: formatNumber(journal.tradeQty),
-    price: formatNumber(journal.tradePrice),
-    fee: formatNumber(journal.tradeFee),
-    target: formatNumber(journal.targetReturn),
-    actual: formatNumber(journal.actualReturn),
+    qty: formatNumber(journal.tradeQty, locale),
+    price: formatNumber(journal.tradePrice, locale),
+    fee: formatNumber(journal.tradeFee, locale),
+    target: formatNumber(journal.targetReturn, locale),
+    actual: formatNumber(journal.actualReturn, locale),
   };
   const hasTrade =
     trade.qty != null ||
@@ -43,13 +53,13 @@ export function JournalDetail({ journal }: { journal: Journal }) {
               href={`/journal/${journal.id}/edit`}
               className={buttonVariants({ variant: 'outline' })}
             >
-              <Pencil className="mr-2 h-4 w-4" /> 수정
+              <Pencil className="mr-2 h-4 w-4" /> {t('edit')}
             </Link>
             <DeleteJournalButton id={journal.id} />
           </div>
         </div>
         <p className="text-sm text-muted-foreground tabular-nums">
-          {journal.tradedAt.toLocaleString()}
+          {formatDateTime(journal.tradedAt, locale)}
         </p>
         <div className="flex flex-wrap gap-1.5">
           {journal.tickers.map((t) => (
@@ -59,7 +69,7 @@ export function JournalDetail({ journal }: { journal: Journal }) {
           ))}
           {journal.tradeTypes.map((t) => (
             <Badge key={t} variant="outline">
-              {TRADE_TYPE_LABELS[t]}
+              {tradeTypeLabel(t, locale.t)}
             </Badge>
           ))}
           {journal.tags.map((tag) => (
@@ -71,20 +81,33 @@ export function JournalDetail({ journal }: { journal: Journal }) {
         {(journal.sentiment != null || journal.horizon) && (
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
             {journal.sentiment != null && (
-              <span>감정: {SENTIMENT_LABELS[journal.sentiment]}</span>
+              <span>{t('sentiment')}: {sentimentLabel(journal.sentiment, t)}</span>
             )}
-            {journal.horizon && <span>기간: {HORIZON_LABELS[journal.horizon]}</span>}
+            {journal.horizon && <span>{t('horizon')}: {horizonLabel(journal.horizon, t)}</span>}
           </div>
         )}
       </header>
 
       {hasTrade && (
         <section className="grid grid-cols-2 gap-3 rounded-md border bg-card p-4 sm:grid-cols-5">
-          <Cell label="수량" value={trade.qty} />
-          <Cell label="단가" value={trade.price} />
-          <Cell label="수수료" value={trade.fee} />
-          <Cell label="목표 %" value={trade.target} />
-          <Cell label="실제 %" value={trade.actual} />
+          <Cell label={t('tradeQty')} value={trade.qty} />
+          <Cell label={t('tradePrice')} value={trade.price} />
+          <Cell label={t('fee')} value={trade.fee} />
+          <Cell label={t('targetReturn')} value={trade.target} />
+          <Cell label={t('actualReturn')} value={trade.actual} />
+        </section>
+      )}
+
+      {journal.riskChecks.length > 0 && (
+        <section className="rounded-md border bg-card p-4">
+          <h2 className="text-sm font-medium">{t('riskChecklist')}</h2>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {journal.riskChecks.map((check) => (
+              <li key={check} className="rounded-md border bg-background px-3 py-2 text-sm">
+                {riskCheckLabel(check, t)}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
@@ -93,6 +116,43 @@ export function JournalDetail({ journal }: { journal: Journal }) {
       <MarkdownPreview content={journal.content} />
     </article>
   );
+}
+
+function tradeTypeLabel(value: TradeType, t: (key: string) => string): string {
+  return t({
+    buy: 'tradeTypeBuy',
+    sell: 'tradeTypeSell',
+    hold: 'tradeTypeHold',
+    analysis: 'tradeTypeAnalysis',
+    plan: 'tradeTypePlan',
+    reflection: 'tradeTypeReflection',
+  }[value]);
+}
+
+function horizonLabel(value: Horizon, t: (key: string) => string): string {
+  return t({ short: 'horizonShort', mid: 'horizonMid', long: 'horizonLong' }[value]);
+}
+
+function sentimentLabel(value: number, t: (key: string) => string): string {
+  const key = {
+    1: 'sentimentVeryNegative',
+    2: 'sentimentNegative',
+    3: 'sentimentNeutral',
+    4: 'sentimentPositive',
+    5: 'sentimentVeryPositive',
+  }[value];
+  return key ? t(key) : String(value);
+}
+
+function riskCheckLabel(value: RiskCheck, t: (key: string) => string): string {
+  return t({
+    entryReason: 'riskEntryReason',
+    stopLoss: 'riskStopLoss',
+    positionSize: 'riskPositionSize',
+    earningsDate: 'riskEarningsDate',
+    marketDirection: 'riskMarketDirection',
+    invalidation: 'riskInvalidation',
+  }[value]);
 }
 
 function Cell({ label, value }: { label: string; value: string | null }) {

@@ -73,6 +73,7 @@ export const journals = pgTable('journal', {
   tickers: text('tickers').array().notNull().default([]),
   tags: text('tags').array().notNull().default([]),
   tradeTypes: text('tradeTypes').array().notNull().default([]),
+  riskChecks: text('riskChecks').array().notNull().default([]),
   tradeQty: numeric('tradeQty'),
   tradePrice: numeric('tradePrice'),
   tradeFee: numeric('tradeFee'),
@@ -84,3 +85,17 @@ export const journals = pgTable('journal', {
   createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
 });
+
+export const watchlistItems = pgTable(
+  'watchlistItem',
+  {
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    symbol: text('symbol').notNull(),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (item) => ({
+    compoundKey: primaryKey({ columns: [item.userId, item.symbol] }),
+  }),
+);

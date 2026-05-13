@@ -6,6 +6,8 @@ import { Save } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useLocale } from '@/features/locale';
+import { formatDateTimeInput } from '@/shared/lib/locale';
 import {
   Select,
   SelectContent,
@@ -15,11 +17,12 @@ import {
 } from '@/components/ui/select';
 import {
   HORIZONS,
-  HORIZON_LABELS,
-  SENTIMENT_LABELS,
+  RISK_CHECKS,
   TAG_MAX_COUNT,
   TITLE_MAX,
+  type Horizon,
   type Journal,
+  type RiskCheck,
   type TradeType,
 } from '../model/types';
 import { createJournalAction, updateJournalAction, type ActionState } from '../api/actions';
@@ -29,18 +32,23 @@ import { TradeTypeSelector } from './TradeTypeSelector';
 
 interface Props {
   initial?: Journal;
+  initialTitle?: string;
   initialContent?: string;
-}
-
-function toLocalDateTimeInput(d: Date): string {
-  const off = d.getTimezoneOffset();
-  const local = new Date(d.getTime() - off * 60_000);
-  return local.toISOString().slice(0, 16);
+  initialTickers?: string[];
+  initialTags?: string[];
 }
 
 const SENTIMENT_OPTIONS = [1, 2, 3, 4, 5] as const;
 
-export function JournalForm({ initial, initialContent }: Props) {
+export function JournalForm({
+  initial,
+  initialTitle,
+  initialContent,
+  initialTickers = [],
+  initialTags = [],
+}: Props) {
+  const locale = useLocale();
+  const { t } = locale;
   const isEdit = !!initial;
   const action = isEdit
     ? updateJournalAction.bind(null, initial!.id)
@@ -48,35 +56,36 @@ export function JournalForm({ initial, initialContent }: Props) {
 
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, null);
 
-  const [title, setTitle] = useState(initial?.title ?? '');
+  const [title, setTitle] = useState(initial?.title ?? initialTitle ?? '');
   const [content, setContent] = useState(initial?.content ?? initialContent ?? '');
-  const [tickers, setTickers] = useState<string[]>(initial?.tickers ?? []);
-  const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
+  const [tickers, setTickers] = useState<string[]>(initial?.tickers ?? initialTickers);
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? initialTags);
   const [tradeTypes, setTradeTypes] = useState<TradeType[]>(initial?.tradeTypes ?? []);
+  const [riskChecks, setRiskChecks] = useState<RiskCheck[]>(initial?.riskChecks ?? []);
   const [horizon, setHorizon] = useState<string>(initial?.horizon ?? '');
   const [sentiment, setSentiment] = useState<string>(
     initial?.sentiment != null ? String(initial.sentiment) : '',
   );
-  const [tradedAt] = useState<string>(
-    toLocalDateTimeInput(initial?.tradedAt ?? new Date()),
-  );
+  const tradedAt = formatDateTimeInput(initial?.tradedAt ?? new Date(), locale);
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
       <input type="hidden" name="tickers" value={JSON.stringify(tickers)} />
       <input type="hidden" name="tags" value={JSON.stringify(tags)} />
       <input type="hidden" name="tradeTypes" value={JSON.stringify(tradeTypes)} />
+      <input type="hidden" name="riskChecks" value={JSON.stringify(riskChecks)} />
+      <input type="hidden" name="locale" value={locale.id} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
         <div className="space-y-2">
-          <Label htmlFor="title">제목</Label>
+          <Label htmlFor="title">{t('title')}</Label>
           <Input
             id="title"
             name="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={TITLE_MAX}
-            placeholder="예: AAPL 매수 — 진입 근거 정리"
+            placeholder={t('placeholderJournalTitle')}
             required
           />
           <p className="text-xs text-muted-foreground">
@@ -84,8 +93,9 @@ export function JournalForm({ initial, initialContent }: Props) {
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="tradedAt">작성일시</Label>
+          <Label htmlFor="tradedAt">{t('tradedAt')}</Label>
           <Input
+            key={locale.id}
             id="tradedAt"
             name="tradedAt"
             type="datetime-local"
@@ -96,36 +106,62 @@ export function JournalForm({ initial, initialContent }: Props) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>종목 (Ticker)</Label>
+          <Label>{t('ticker')} (Ticker)</Label>
           <ChipInput
             values={tickers}
             onChange={setTickers}
-            placeholder="예: AAPL, 005930"
+            placeholder="AAPL, 005930"
             transform={(s) => s.toUpperCase()}
-            ariaLabel="종목 입력"
+            ariaLabel={t('tickerInput')}
           />
         </div>
         <div className="space-y-2">
-          <Label>태그</Label>
+          <Label>{t('tag')}</Label>
           <ChipInput
             values={tags}
             onChange={setTags}
-            placeholder="#가치투자, #리스크관리"
+            placeholder={t('placeholderTags')}
             maxCount={TAG_MAX_COUNT}
-            ariaLabel="태그 입력"
+            ariaLabel={t('tagInput')}
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label>투자 유형</Label>
+        <Label>{t('tradeType')}</Label>
         <TradeTypeSelector values={tradeTypes} onChange={setTradeTypes} />
       </div>
 
+      <fieldset className="grid gap-3 rounded-md border p-4 sm:grid-cols-2">
+        <legend className="px-1 text-sm font-medium">{t('riskChecklist')}</legend>
+        {RISK_CHECKS.map((check) => {
+          const checked = riskChecks.includes(check);
+          return (
+            <label
+              key={check}
+              className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm"
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(event) => {
+                  setRiskChecks((current) =>
+                    event.target.checked
+                      ? [...current, check]
+                      : current.filter((value) => value !== check),
+                  );
+                }}
+              />
+              <span>{riskCheckLabel(check, t)}</span>
+            </label>
+          );
+        })}
+      </fieldset>
+
       <fieldset className="grid grid-cols-2 gap-3 rounded-md border p-4 sm:grid-cols-4">
-        <legend className="px-1 text-sm font-medium">거래 정보 (선택)</legend>
+        <legend className="px-1 text-sm font-medium">{t('tradeInfoOptional')}</legend>
         <div className="space-y-1.5">
-          <Label htmlFor="tradeQty" className="text-xs">수량</Label>
+          <Label htmlFor="tradeQty" className="text-xs">{t('tradeQty')}</Label>
           <Input
             id="tradeQty"
             name="tradeQty"
@@ -135,7 +171,7 @@ export function JournalForm({ initial, initialContent }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="tradePrice" className="text-xs">단가</Label>
+          <Label htmlFor="tradePrice" className="text-xs">{t('tradePrice')}</Label>
           <Input
             id="tradePrice"
             name="tradePrice"
@@ -145,7 +181,7 @@ export function JournalForm({ initial, initialContent }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="tradeFee" className="text-xs">수수료</Label>
+          <Label htmlFor="tradeFee" className="text-xs">{t('fee')}</Label>
           <Input
             id="tradeFee"
             name="tradeFee"
@@ -155,7 +191,7 @@ export function JournalForm({ initial, initialContent }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="targetReturn" className="text-xs">목표 수익률 %</Label>
+          <Label htmlFor="targetReturn" className="text-xs">{t('targetReturn')}</Label>
           <Input
             id="targetReturn"
             name="targetReturn"
@@ -165,7 +201,7 @@ export function JournalForm({ initial, initialContent }: Props) {
           />
         </div>
         <div className="space-y-1.5 sm:col-span-1">
-          <Label htmlFor="actualReturn" className="text-xs">실제 수익률 %</Label>
+          <Label htmlFor="actualReturn" className="text-xs">{t('actualReturn')}</Label>
           <Input
             id="actualReturn"
             name="actualReturn"
@@ -178,19 +214,19 @@ export function JournalForm({ initial, initialContent }: Props) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="sentiment">감정 지수</Label>
+          <Label htmlFor="sentiment">{t('sentimentIndex')}</Label>
           <Select
             value={sentiment}
             onValueChange={(v) => setSentiment(v == null || v === 'none' ? '' : v)}
           >
             <SelectTrigger id="sentiment">
-              <SelectValue placeholder="선택 안 함" />
+              <SelectValue placeholder={t('noSelection')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">선택 안 함</SelectItem>
+              <SelectItem value="none">{t('noSelection')}</SelectItem>
               {SENTIMENT_OPTIONS.map((n) => (
                 <SelectItem key={n} value={String(n)}>
-                  {n} — {SENTIMENT_LABELS[n]}
+                  {n} - {sentimentLabel(n, t)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -198,19 +234,19 @@ export function JournalForm({ initial, initialContent }: Props) {
           <input type="hidden" name="sentiment" value={sentiment} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="horizon">투자 기간</Label>
+          <Label htmlFor="horizon">{t('horizon')}</Label>
           <Select
             value={horizon}
             onValueChange={(v) => setHorizon(v == null || v === 'none' ? '' : v)}
           >
             <SelectTrigger id="horizon">
-              <SelectValue placeholder="선택 안 함" />
+              <SelectValue placeholder={t('noSelection')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">선택 안 함</SelectItem>
+              <SelectItem value="none">{t('noSelection')}</SelectItem>
               {HORIZONS.map((h) => (
                 <SelectItem key={h} value={h}>
-                  {HORIZON_LABELS[h]}
+                  {horizonLabel(h, t)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -220,12 +256,12 @@ export function JournalForm({ initial, initialContent }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label>본문 (마크다운)</Label>
+        <Label>{t('bodyMarkdown')}</Label>
         <MarkdownEditor
           name="content"
           value={content}
           onChange={setContent}
-          placeholder="이번 거래에 대한 생각을 마크다운으로 정리하세요..."
+          placeholder={t('placeholderJournalBody')}
         />
       </div>
 
@@ -240,13 +276,39 @@ export function JournalForm({ initial, initialContent }: Props) {
           href={isEdit ? `/journal/${initial!.id}` : '/journal'}
           className={buttonVariants({ variant: 'ghost' })}
         >
-          취소
+          {t('cancel')}
         </Link>
         <Button type="submit" disabled={pending}>
           <Save className="mr-2 h-4 w-4" />
-          {pending ? '저장 중…' : isEdit ? '수정 저장' : '일지 저장'}
+          {pending ? t('saving') : isEdit ? t('updateJournal') : t('saveJournal')}
         </Button>
       </div>
     </form>
   );
+}
+
+function horizonLabel(value: Horizon, t: (key: string) => string): string {
+  return t({ short: 'horizonShort', mid: 'horizonMid', long: 'horizonLong' }[value]);
+}
+
+function sentimentLabel(value: number, t: (key: string) => string): string {
+  const key = {
+    1: 'sentimentVeryNegative',
+    2: 'sentimentNegative',
+    3: 'sentimentNeutral',
+    4: 'sentimentPositive',
+    5: 'sentimentVeryPositive',
+  }[value];
+  return key ? t(key) : String(value);
+}
+
+function riskCheckLabel(value: RiskCheck, t: (key: string) => string): string {
+  return t({
+    entryReason: 'riskEntryReason',
+    stopLoss: 'riskStopLoss',
+    positionSize: 'riskPositionSize',
+    earningsDate: 'riskEarningsDate',
+    marketDirection: 'riskMarketDirection',
+    invalidation: 'riskInvalidation',
+  }[value]);
 }

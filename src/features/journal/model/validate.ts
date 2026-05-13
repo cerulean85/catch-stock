@@ -1,12 +1,15 @@
 import {
   HORIZONS,
+  RISK_CHECKS,
   TAG_MAX_COUNT,
   TITLE_MAX,
   TRADE_TYPES,
   type Horizon,
   type JournalInput,
+  type RiskCheck,
   type TradeType,
 } from './types';
+import { getLocaleOption, parseDateTimeInput } from '@/shared/lib/locale';
 
 export class JournalValidationError extends Error {
   constructor(message: string) {
@@ -61,6 +64,10 @@ export function parseJournalInput(form: FormData): JournalInput {
   const tradeTypes = tradeTypesRaw.filter((t): t is TradeType =>
     (TRADE_TYPES as readonly string[]).includes(t),
   );
+  const riskChecksRaw = parseListJSON(form.get('riskChecks'));
+  const riskChecks = riskChecksRaw.filter((t): t is RiskCheck =>
+    (RISK_CHECKS as readonly string[]).includes(t),
+  );
 
   const sentimentN = asNumberOrNull(form.get('sentiment'));
   const sentiment =
@@ -72,7 +79,8 @@ export function parseJournalInput(form: FormData): JournalInput {
     : null;
 
   const tradedAtRaw = asTrimmed(form.get('tradedAt'));
-  const tradedAt = tradedAtRaw ? new Date(tradedAtRaw) : new Date();
+  const locale = getLocaleOption(asTrimmed(form.get('locale')));
+  const tradedAt = tradedAtRaw ? parseDateTimeInput(tradedAtRaw, locale) : new Date();
   if (Number.isNaN(tradedAt.getTime())) {
     throw new JournalValidationError('작성일시 형식이 올바르지 않습니다.');
   }
@@ -83,6 +91,7 @@ export function parseJournalInput(form: FormData): JournalInput {
     tickers,
     tags,
     tradeTypes,
+    riskChecks,
     tradeQty: asNumberOrNull(form.get('tradeQty')),
     tradePrice: asNumberOrNull(form.get('tradePrice')),
     tradeFee: asNumberOrNull(form.get('tradeFee')),

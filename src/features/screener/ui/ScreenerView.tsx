@@ -3,11 +3,15 @@
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLocale } from '@/features/locale';
+import { formatDateTime } from '@/shared/lib/locale';
 import { useScreenerStore } from '../model/store';
 import { ScreenerGrid } from './ScreenerGrid';
 
 export function ScreenerView() {
   const { status, result, error, load } = useScreenerStore();
+  const locale = useLocale();
+  const { t } = locale;
 
   useEffect(() => {
     if (status === 'idle') void load();
@@ -19,14 +23,14 @@ export function ScreenerView() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Catch Stock</h1>
           <p className="text-sm text-muted-foreground">
-            S&amp;P 500 종목 중 일 RSI14 ∈ [50, 60] AND 월 RSI14 ≥ 70
+            {t('stockScreenerDescription')}
           </p>
         </div>
         <div className="flex items-center gap-3">
           {result && (
             <span className="text-xs text-muted-foreground tabular-nums">
-              생성: {new Date(result.generatedAt).toLocaleString()} ·{' '}
-              {result.cache.hit ? `cache (${result.cache.ttlSeconds}s)` : 'fresh'}
+              {t('savedAt')}: {formatDateTime(result.generatedAt, locale)} ·{' '}
+              {result.cache.hit ? `${t('cache')} (${result.cache.ttlSeconds}s)` : t('fresh')}
             </span>
           )}
           <Button
@@ -35,14 +39,14 @@ export function ScreenerView() {
             disabled={status === 'loading'}
             onClick={() => void load({ refresh: true })}
           >
-            {status === 'loading' ? '불러오는 중…' : '새로고침'}
+            {status === 'loading' ? t('refreshing') : t('refresh')}
           </Button>
         </div>
       </header>
 
       {status === 'error' && (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          <div className="font-medium">불러오기 실패</div>
+          <div className="font-medium">{t('failedLoad')}</div>
           <div className="mt-1">{error}</div>
           <Button
             className="mt-3"
@@ -50,19 +54,19 @@ export function ScreenerView() {
             variant="outline"
             onClick={() => void load({ refresh: true })}
           >
-            다시 시도
+            {t('retry')}
           </Button>
         </div>
       )}
 
       {status === 'loading' && !result && <LoadingSkeleton />}
 
-      {result && <ScreenerGrid items={result.items} />}
+      {result && <ScreenerGrid items={result.items} locale={locale} />}
 
       {result && result.skipped.length > 0 && (
         <details className="text-xs text-muted-foreground">
           <summary className="cursor-pointer">
-            스킵된 종목 {result.skipped.length}개
+            {t('skippedSymbols')} {result.skipped.length}
           </summary>
           <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
             {result.skipped.map((s) => (

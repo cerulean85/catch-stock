@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLocale } from '@/features/locale';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import {
 import { deleteJournalAction } from '../api/actions';
 
 export function DeleteJournalButton({ id }: { id: string }) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -26,19 +28,19 @@ export function DeleteJournalButton({ id }: { id: string }) {
         onClick={() => setOpen(true)}
       >
         <Trash2 className="mr-2 h-4 w-4" />
-        삭제
+        {t('delete')}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>일지 삭제</DialogTitle>
+            <DialogTitle>{t('journalDelete')}</DialogTitle>
             <DialogDescription className="pt-2">
-              이 일지를 정말 삭제하시겠습니까? 삭제된 내용은 복구할 수 없습니다.
+              {t('journalDeleteConfirm')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
-              취소
+              {t('cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -46,7 +48,7 @@ export function DeleteJournalButton({ id }: { id: string }) {
               onClick={() => startTransition(() => deleteJournalAction(id))}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              {pending ? '삭제 중…' : '삭제'}
+              {pending ? t('deleting') : t('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

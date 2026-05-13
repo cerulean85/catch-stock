@@ -5,13 +5,15 @@ import { useEffect, useState, useTransition } from 'react';
 import { Search, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { TRADE_TYPES, TRADE_TYPE_LABELS, type JournalFilters, type TradeType } from '../model/types';
+import { useLocale } from '@/features/locale';
+import { TRADE_TYPES, type JournalFilters, type TradeType } from '../model/types';
 
 interface Props {
   initial: JournalFilters;
 }
 
 export function JournalListFilters({ initial }: Props) {
+  const { t } = useLocale();
   const router = useRouter();
   const params = useSearchParams();
   const [, startTransition] = useTransition();
@@ -50,26 +52,26 @@ export function JournalListFilters({ initial }: Props) {
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="제목·본문 검색"
+          placeholder={t('searchTitleBody')}
           className="pl-9"
         />
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted-foreground">투자 유형:</span>
-        {TRADE_TYPES.map((t) => {
-          const active = activeTradeType === t;
+        <span className="text-xs text-muted-foreground">{t('tradeType')}:</span>
+        {TRADE_TYPES.map((tradeType) => {
+          const active = activeTradeType === tradeType;
           return (
             <button
-              key={t}
+              key={tradeType}
               type="button"
-              onClick={() => setFilter('tradeType', active ? null : t)}
+              onClick={() => setFilter('tradeType', active ? null : tradeType)}
               aria-pressed={active}
             >
               <Badge
                 variant={active ? 'default' : 'outline'}
                 className="cursor-pointer select-none"
               >
-                {TRADE_TYPE_LABELS[t]}
+                {tradeTypeLabel(tradeType, t)}
               </Badge>
             </button>
           );
@@ -78,12 +80,13 @@ export function JournalListFilters({ initial }: Props) {
           <div className="ml-auto flex items-center gap-2 text-xs">
             {activeTicker && (
               <ActiveChip
-                label={`종목: ${activeTicker}`}
+                label={`${t('ticker')}: ${activeTicker}`}
                 onClear={() => setFilter('ticker', null)}
+                clearLabel={t('clear')}
               />
             )}
             {activeTag && (
-              <ActiveChip label={`태그: ${activeTag}`} onClear={() => setFilter('tag', null)} />
+              <ActiveChip label={`${t('tag')}: ${activeTag}`} onClear={() => setFilter('tag', null)} clearLabel={t('clear')} />
             )}
           </div>
         )}
@@ -92,18 +95,38 @@ export function JournalListFilters({ initial }: Props) {
   );
 }
 
-function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
+function ActiveChip({
+  label,
+  onClear,
+  clearLabel,
+}: {
+  label: string;
+  onClear: () => void;
+  clearLabel?: string;
+}) {
   return (
     <Badge variant="secondary" className="gap-1 pr-1">
       <span>{label}</span>
       <button
         type="button"
         onClick={onClear}
-        aria-label={`${label} 해제`}
+        aria-label={`${label} ${clearLabel ?? 'clear'}`}
         className="rounded-sm hover:bg-muted-foreground/20"
       >
         <X className="h-3 w-3" />
       </button>
     </Badge>
   );
+}
+
+function tradeTypeLabel(value: TradeType, t: (key: string) => string): string {
+  const keys: Record<TradeType, string> = {
+    buy: 'tradeTypeBuy',
+    sell: 'tradeTypeSell',
+    hold: 'tradeTypeHold',
+    analysis: 'tradeTypeAnalysis',
+    plan: 'tradeTypePlan',
+    reflection: 'tradeTypeReflection',
+  };
+  return t(keys[value]);
 }

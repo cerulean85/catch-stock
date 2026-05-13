@@ -1,6 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
+import { useLocale } from '@/features/locale';
 import type { Journal, JournalFilters } from '../model/types';
 import { JournalCard } from './JournalCard';
 import { JournalListFilters } from './JournalListFilters';
@@ -11,16 +14,20 @@ interface Props {
 }
 
 export function JournalList({ items, filters }: Props) {
+  const { t } = useLocale();
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">투자 일지</h1>
-          <p className="text-sm text-muted-foreground">{items.length}개의 기록</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('journalTitle')}</h1>
+          <p className="text-sm text-muted-foreground">
+            {items.length} {t('journalCountSuffix')}
+          </p>
         </div>
         <Link href="/journal/new" className={buttonVariants({ variant: 'default' })}>
           <Plus className="mr-1.5 h-4 w-4" />
-          새 일지
+          {t('newJournal')}
         </Link>
       </header>
 
@@ -28,7 +35,7 @@ export function JournalList({ items, filters }: Props) {
 
       {items.length === 0 ? (
         <div className="rounded-md border border-dashed p-12 text-center text-sm text-muted-foreground">
-          아직 작성된 일지가 없습니다. 새 일지를 작성해보세요.
+          {t('journalEmpty')}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

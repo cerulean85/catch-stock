@@ -4,6 +4,7 @@ import { useState, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { useLocale } from '@/features/locale';
 
 interface Props {
   values: string[];
@@ -22,6 +23,7 @@ export function ChipInput({
   transform,
   ariaLabel,
 }: Props) {
+  const { t } = useLocale();
   const [draft, setDraft] = useState('');
 
   const commit = () => {
@@ -64,7 +66,7 @@ export function ChipInput({
             <button
               type="button"
               onClick={() => remove(v)}
-              aria-label={`${v} 제거`}
+              aria-label={`${v} ${t('clear')}`}
               className="rounded-sm hover:bg-muted-foreground/20"
             >
               <X className="h-3 w-3" />

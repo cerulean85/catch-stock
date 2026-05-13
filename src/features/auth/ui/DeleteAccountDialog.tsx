@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLocale } from '@/features/locale';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function DeleteAccountDialog({ open, onOpenChange }: Props) {
+  const { t } = useLocale();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +30,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: Props) {
       try {
         await deleteAccountAction();
       } catch (e) {
-        setError(e instanceof Error ? e.message : '탈퇴 처리에 실패했습니다.');
+        setError(e instanceof Error ? e.message : t('deleteAccountFailed'));
       }
     });
   };
@@ -37,10 +39,9 @@ export function DeleteAccountDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>회원탈퇴</DialogTitle>
+          <DialogTitle>{t('deleteAccount')}</DialogTitle>
           <DialogDescription className="pt-2">
-            정말로 탈퇴하시겠습니까? 회원 정보와 모든 연결된 데이터가 데이터베이스에서 영구
-            삭제되며 복구할 수 없습니다.
+            {t('deleteAccountConfirm')}
           </DialogDescription>
         </DialogHeader>
         {error && (
@@ -50,11 +51,11 @@ export function DeleteAccountDialog({ open, onOpenChange }: Props) {
         )}
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            취소
+            {t('cancel')}
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={pending}>
             <Trash2 className="mr-2 h-4 w-4" />
-            {pending ? '처리 중…' : '탈퇴하기'}
+            {pending ? t('processing') : t('deleteAccount')}
           </Button>
         </DialogFooter>
       </DialogContent>

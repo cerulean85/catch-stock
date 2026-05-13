@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Eye, Pencil, Columns2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useLocale } from '@/features/locale';
 import { MarkdownPreview } from './MarkdownPreview';
 
 type Mode = 'edit' | 'preview' | 'split';
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function MarkdownEditor({ name, value, onChange, placeholder }: Props) {
+  const { t } = useLocale();
   const [mode, setMode] = useState<Mode>('split');
 
   return (
@@ -27,7 +29,7 @@ export function MarkdownEditor({ name, value, onChange, placeholder }: Props) {
           size="sm"
           onClick={() => setMode('edit')}
         >
-          <Pencil className="mr-1.5 h-3.5 w-3.5" /> 편집
+          <Pencil className="mr-1.5 h-3.5 w-3.5" /> {t('editMode')}
         </Button>
         <Button
           type="button"
@@ -36,7 +38,7 @@ export function MarkdownEditor({ name, value, onChange, placeholder }: Props) {
           onClick={() => setMode('split')}
           className="hidden sm:inline-flex"
         >
-          <Columns2 className="mr-1.5 h-3.5 w-3.5" /> 분할
+          <Columns2 className="mr-1.5 h-3.5 w-3.5" /> {t('splitMode')}
         </Button>
         <Button
           type="button"
@@ -44,7 +46,7 @@ export function MarkdownEditor({ name, value, onChange, placeholder }: Props) {
           size="sm"
           onClick={() => setMode('preview')}
         >
-          <Eye className="mr-1.5 h-3.5 w-3.5" /> 미리보기
+          <Eye className="mr-1.5 h-3.5 w-3.5" /> {t('preview')}
         </Button>
       </div>
 

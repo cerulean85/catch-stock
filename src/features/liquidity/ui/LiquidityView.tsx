@@ -4,12 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { Activity, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLocale } from '@/features/locale';
 import { cn } from '@/lib/utils';
+import { formatDateTime, formatDecimal, type LocaleSettings } from '@/shared/lib/locale';
 import { useLiquidityStore } from '../model/store';
 import type { LiquidityMetric, LiquidityMetricId, LiquidityPoint } from '../model/types';
 
 export function LiquidityView() {
   const { status, result, error, load } = useLiquidityStore();
+  const locale = useLocale();
+  const { t } = locale;
   const [selectedId, setSelectedId] = useState<LiquidityMetricId>('tga');
 
   useEffect(() => {
@@ -29,13 +33,13 @@ export function LiquidityView() {
             <Activity className="h-4 w-4" />
             Market Liquidity
           </div>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">시장 유동성 잔고</h2>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">{t('liquidityTitle')}</h2>
         </div>
         <div className="flex items-center gap-3">
           {result && (
             <span className="text-xs text-muted-foreground tabular-nums">
-              생성: {new Date(result.generatedAt).toLocaleString()} ·{' '}
-              {result.cache.hit ? `cache (${result.cache.ttlSeconds}s)` : 'fresh'}
+              {t('savedAt')}: {formatDateTime(result.generatedAt, locale)} ·{' '}
+              {result.cache.hit ? `${t('cache')} (${result.cache.ttlSeconds}s)` : t('fresh')}
             </span>
           )}
           <Button
@@ -45,14 +49,14 @@ export function LiquidityView() {
             onClick={() => void load({ refresh: true })}
           >
             <RefreshCw className={cn('h-4 w-4', status === 'loading' && 'animate-spin')} />
-            새로고침
+            {t('refresh')}
           </Button>
         </div>
       </header>
 
       {status === 'error' && (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-          <div className="font-medium">유동성 데이터 불러오기 실패</div>
+          <div className="font-medium">{t('liquidityDataFailed')}</div>
           <div className="mt-1">{error}</div>
         </div>
       )}
@@ -75,8 +79,8 @@ export function LiquidityView() {
                       : 'border-border hover:bg-accent',
                   )}
                 >
-                  <span className="block font-medium">{metric.name}</span>
-                  <span className="block text-xs opacity-75">{metric.frequency}</span>
+                  <span className="block font-medium">{metricText(metric.id, locale).name}</span>
+                  <span className="block text-xs opacity-75">{metricText(metric.id, locale).frequency}</span>
                 </button>
               ))}
             </div>
@@ -84,39 +88,39 @@ export function LiquidityView() {
             <div className="mt-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
-                  <h3 className="text-lg font-semibold">{selected.name}</h3>
+                  <h3 className="text-lg font-semibold">{metricText(selected.id, locale).name}</h3>
                   <p className="text-sm text-muted-foreground">{selected.label}</p>
                 </div>
-                <LatestValue metric={selected} />
+                <LatestValue metric={selected} locale={locale} />
               </div>
-              <LiquidityChart points={selected.points} />
+              <LiquidityChart points={selected.points} locale={locale} />
             </div>
           </div>
 
           <aside className="rounded-md border bg-card p-4">
             <dl className="space-y-4 text-sm">
               <div>
-                <dt className="text-xs font-medium text-muted-foreground">의미</dt>
-                <dd className="mt-1">{selected.description}</dd>
+                <dt className="text-xs font-medium text-muted-foreground">{t('liquidityMeaning')}</dt>
+                <dd className="mt-1">{metricText(selected.id, locale).description}</dd>
               </div>
               <div>
-                <dt className="text-xs font-medium text-muted-foreground">유동성 영향</dt>
+                <dt className="text-xs font-medium text-muted-foreground">{t('liquidityImpact')}</dt>
                 <dd
                   className={cn(
                     'mt-1 font-medium',
                     selected.risingImpact === 'positive' ? 'text-emerald-600' : 'text-rose-600',
                   )}
                 >
-                  {selected.impact}
+                  {metricText(selected.id, locale).impact}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs font-medium text-muted-foreground">소스</dt>
+                <dt className="text-xs font-medium text-muted-foreground">Source</dt>
                 <dd className="mt-1 font-mono text-xs">{selected.source}</dd>
               </div>
               <div>
-                <dt className="text-xs font-medium text-muted-foreground">단위</dt>
-                <dd className="mt-1">십억 달러</dd>
+                <dt className="text-xs font-medium text-muted-foreground">Unit</dt>
+                <dd className="mt-1">{t('liquidityUnitBillionsUsd')}</dd>
               </div>
             </dl>
           </aside>
@@ -126,16 +130,22 @@ export function LiquidityView() {
   );
 }
 
-function LatestValue({ metric }: { metric: LiquidityMetric }) {
+function LatestValue({
+  metric,
+  locale,
+}: {
+  metric: LiquidityMetric;
+  locale: Pick<LocaleSettings, 'locale'> & { t?: (key: string) => string };
+}) {
   const latest = metric.latest;
   const previous = metric.previous;
   const delta = latest && previous ? latest.value - previous.value : null;
-  const deltaLabel = delta === null ? null : `${delta >= 0 ? '+' : ''}${formatValue(delta)}`;
+  const deltaLabel = delta === null ? null : `${delta >= 0 ? '+' : ''}${formatValue(delta, locale)}`;
 
   return (
     <div className="text-right">
       <div className="text-2xl font-semibold tabular-nums">
-        {latest ? formatValue(latest.value) : '-'}
+        {latest ? formatValue(latest.value, locale) : '-'}
       </div>
       <div className="text-xs text-muted-foreground">
         {latest?.date ?? '-'} {deltaLabel ? `· ${deltaLabel}` : ''}
@@ -144,7 +154,13 @@ function LatestValue({ metric }: { metric: LiquidityMetric }) {
   );
 }
 
-function LiquidityChart({ points }: { points: LiquidityPoint[] }) {
+function LiquidityChart({
+  points,
+  locale,
+}: {
+  points: LiquidityPoint[];
+  locale: Pick<LocaleSettings, 'locale'> & { t?: (key: string) => string };
+}) {
   const width = 720;
   const height = 280;
   const padding = { top: 16, right: 16, bottom: 28, left: 54 };
@@ -167,7 +183,7 @@ function LiquidityChart({ points }: { points: LiquidityPoint[] }) {
   return (
     <div className="mt-4 overflow-hidden rounded-md border bg-background">
       <svg viewBox={`0 0 ${width} ${height}`} role="img" className="h-72 w-full">
-        <title>유동성 잔고 추이</title>
+        <title>{locale.t?.('liquidityChartTitle') ?? 'Liquidity Balance Trend'}</title>
         {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
           const y = padding.top + ratio * innerHeight;
           const value = max - ratio * range;
@@ -186,7 +202,7 @@ function LiquidityChart({ points }: { points: LiquidityPoint[] }) {
                 textAnchor="end"
                 className="fill-muted-foreground text-[11px]"
               >
-                {formatValue(value)}
+                {formatValue(value, locale)}
               </text>
             </g>
           );
@@ -229,10 +245,83 @@ function LoadingSkeleton() {
   );
 }
 
-function formatValue(value: number): string {
-  return new Intl.NumberFormat('ko-KR', {
+function formatValue(value: number, locale: Pick<LocaleSettings, 'locale'>): string {
+  return formatDecimal(value, locale, {
     maximumFractionDigits: value >= 10 ? 0 : 2,
     minimumFractionDigits: value >= 10 ? 0 : 2,
-  }).format(value);
+  });
 }
 
+function metricText(
+  id: LiquidityMetricId,
+  locale: Pick<LocaleSettings, 'locale'>,
+): {
+  name: string;
+  frequency: string;
+  description: string;
+  impact: string;
+} {
+  const language = locale.locale.split('-')[0];
+  const texts = language === 'ko' ? liquidityTexts.ko : liquidityTexts.en;
+  return texts[id];
+}
+
+const liquidityTexts = {
+  ko: {
+    tga: {
+      name: 'TGA 잔고',
+      frequency: '주간',
+      description: '미국 재무부가 Fed에 보유한 정부 운영 계좌 잔고',
+      impact: '상승 시 시장 유동성 감소',
+    },
+    rrp: {
+      name: '역레포 잔고',
+      frequency: '영업일',
+      description: '금융기관들이 Fed에 단기로 맡긴 자금',
+      impact: '상승 시 시장 유동성 감소',
+    },
+    reserves: {
+      name: '지급준비금',
+      frequency: '주간',
+      description: '예금기관이 Federal Reserve Banks에 보유한 준비금 잔고',
+      impact: '상승 시 시장 유동성 증가',
+    },
+    soma: {
+      name: 'SOMA 계정',
+      frequency: '주간',
+      description: 'Fed가 보유한 증권 규모',
+      impact: '상승 시 유동성 공급 증가',
+    },
+  },
+  en: {
+    tga: {
+      name: 'TGA Balance',
+      frequency: 'Weekly',
+      description: 'The U.S. Treasury operating account balance held at the Fed',
+      impact: 'Rising balance reduces market liquidity',
+    },
+    rrp: {
+      name: 'Reverse Repo Balance',
+      frequency: 'Business days',
+      description: 'Cash that financial institutions park at the Fed overnight',
+      impact: 'Rising balance reduces market liquidity',
+    },
+    reserves: {
+      name: 'Reserve Balances',
+      frequency: 'Weekly',
+      description: 'Balances that depository institutions hold at Federal Reserve Banks',
+      impact: 'Rising balance increases market liquidity',
+    },
+    soma: {
+      name: 'SOMA Holdings',
+      frequency: 'Weekly',
+      description: 'Securities held outright by the Federal Reserve',
+      impact: 'Rising holdings increase liquidity supply',
+    },
+  },
+} satisfies Record<string, Record<LiquidityMetricId, {
+  name: string;
+  frequency: string;
+  description: string;
+  impact: string;
+}>>;

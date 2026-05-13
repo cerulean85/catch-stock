@@ -1,7 +1,8 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { TRADE_TYPES, TRADE_TYPE_LABELS, type TradeType } from '../model/types';
+import { useLocale } from '@/features/locale';
+import { TRADE_TYPES, type TradeType } from '../model/types';
 
 interface Props {
   values: TradeType[];
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function TradeTypeSelector({ values, onChange }: Props) {
+  const { t } = useLocale();
   const toggle = (t: TradeType) => {
     if (values.includes(t)) onChange(values.filter((v) => v !== t));
     else onChange([...values, t]);
@@ -16,24 +18,35 @@ export function TradeTypeSelector({ values, onChange }: Props) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      {TRADE_TYPES.map((t) => {
-        const active = values.includes(t);
+      {TRADE_TYPES.map((tradeType) => {
+        const active = values.includes(tradeType);
         return (
           <button
-            key={t}
+            key={tradeType}
             type="button"
-            onClick={() => toggle(t)}
+            onClick={() => toggle(tradeType)}
             aria-pressed={active}
           >
             <Badge
               variant={active ? 'default' : 'outline'}
               className="cursor-pointer select-none"
             >
-              {TRADE_TYPE_LABELS[t]}
+              {tradeTypeLabel(tradeType, t)}
             </Badge>
           </button>
         );
       })}
     </div>
   );
+}
+
+function tradeTypeLabel(value: TradeType, t: (key: string) => string): string {
+  return t({
+    buy: 'tradeTypeBuy',
+    sell: 'tradeTypeSell',
+    hold: 'tradeTypeHold',
+    analysis: 'tradeTypeAnalysis',
+    plan: 'tradeTypePlan',
+    reflection: 'tradeTypeReflection',
+  }[value]);
 }

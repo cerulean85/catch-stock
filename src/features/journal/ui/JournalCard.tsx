@@ -1,12 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  HORIZON_LABELS,
-  SENTIMENT_LABELS,
-  TRADE_TYPE_LABELS,
-  type Journal,
-} from '../model/types';
+import { useLocale } from '@/features/locale';
+import { formatDateTime } from '@/shared/lib/locale';
+import type { Horizon, Journal, RiskCheck, TradeType } from '../model/types';
 
 function excerpt(text: string, max = 140): string {
   const flat = text.replace(/[#*>`_~\-\[\]]/g, '').replace(/\s+/g, ' ').trim();
@@ -14,6 +13,9 @@ function excerpt(text: string, max = 140): string {
 }
 
 export function JournalCard({ journal }: { journal: Journal }) {
+  const locale = useLocale();
+  const { t } = locale;
+
   return (
     <Link
       href={`/journal/${journal.id}`}
@@ -23,7 +25,7 @@ export function JournalCard({ journal }: { journal: Journal }) {
         <CardHeader className="pb-3">
           <CardTitle className="line-clamp-2 text-base sm:text-lg">{journal.title}</CardTitle>
           <p className="text-xs text-muted-foreground tabular-nums">
-            {journal.tradedAt.toLocaleString()}
+            {formatDateTime(journal.tradedAt, locale)}
           </p>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -38,7 +40,7 @@ export function JournalCard({ journal }: { journal: Journal }) {
             ))}
             {journal.tradeTypes.map((t) => (
               <Badge key={t} variant="outline" className="text-[11px]">
-                {TRADE_TYPE_LABELS[t]}
+                {tradeTypeLabel(t, locale.t)}
               </Badge>
             ))}
           </div>
@@ -51,16 +53,58 @@ export function JournalCard({ journal }: { journal: Journal }) {
               ))}
             </div>
           )}
+          {journal.riskChecks.length > 0 && (
+            <div className="line-clamp-1 text-[11px] text-muted-foreground">
+              {t('riskCheckPrefix')}: {journal.riskChecks.map((check) => riskCheckLabel(check, t)).join(', ')}
+            </div>
+          )}
           {(journal.sentiment != null || journal.horizon) && (
             <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
               {journal.sentiment != null && (
-                <span>감정: {SENTIMENT_LABELS[journal.sentiment]}</span>
+                <span>{t('sentiment')}: {sentimentLabel(journal.sentiment, t)}</span>
               )}
-              {journal.horizon && <span>기간: {HORIZON_LABELS[journal.horizon]}</span>}
+              {journal.horizon && <span>{t('horizon')}: {horizonLabel(journal.horizon, t)}</span>}
             </div>
           )}
         </CardContent>
       </Card>
     </Link>
   );
+}
+
+function tradeTypeLabel(value: TradeType, t: (key: string) => string): string {
+  return t({
+    buy: 'tradeTypeBuy',
+    sell: 'tradeTypeSell',
+    hold: 'tradeTypeHold',
+    analysis: 'tradeTypeAnalysis',
+    plan: 'tradeTypePlan',
+    reflection: 'tradeTypeReflection',
+  }[value]);
+}
+
+function horizonLabel(value: Horizon, t: (key: string) => string): string {
+  return t({ short: 'horizonShort', mid: 'horizonMid', long: 'horizonLong' }[value]);
+}
+
+function sentimentLabel(value: number, t: (key: string) => string): string {
+  const key = {
+    1: 'sentimentVeryNegative',
+    2: 'sentimentNegative',
+    3: 'sentimentNeutral',
+    4: 'sentimentPositive',
+    5: 'sentimentVeryPositive',
+  }[value];
+  return key ? t(key) : String(value);
+}
+
+function riskCheckLabel(value: RiskCheck, t: (key: string) => string): string {
+  return t({
+    entryReason: 'riskEntryReason',
+    stopLoss: 'riskStopLoss',
+    positionSize: 'riskPositionSize',
+    earningsDate: 'riskEarningsDate',
+    marketDirection: 'riskMarketDirection',
+    invalidation: 'riskInvalidation',
+  }[value]);
 }

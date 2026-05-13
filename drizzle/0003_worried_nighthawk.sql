@@ -1,0 +1,1 @@
+ALTER TABLE "journal" ADD COLUMN "riskChecks" text[] DEFAULT '{}' NOT NULL;
