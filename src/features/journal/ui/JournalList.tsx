@@ -1,0 +1,42 @@
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
+import { buttonVariants } from '@/components/ui/button';
+import type { Journal, JournalFilters } from '../model/types';
+import { JournalCard } from './JournalCard';
+import { JournalListFilters } from './JournalListFilters';
+
+interface Props {
+  items: Journal[];
+  filters: JournalFilters;
+}
+
+export function JournalList({ items, filters }: Props) {
+  return (
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">투자 일지</h1>
+          <p className="text-sm text-muted-foreground">{items.length}개의 기록</p>
+        </div>
+        <Link href="/journal/new" className={buttonVariants({ variant: 'default' })}>
+          <Plus className="mr-1.5 h-4 w-4" />
+          새 일지
+        </Link>
+      </header>
+
+      <JournalListFilters initial={filters} />
+
+      {items.length === 0 ? (
+        <div className="rounded-md border border-dashed p-12 text-center text-sm text-muted-foreground">
+          아직 작성된 일지가 없습니다. 새 일지를 작성해보세요.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((j) => (
+            <JournalCard key={j.id} journal={j} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
