@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rsi14 } from './rsi';
+import { rsi14, rsi14Array } from './rsi';
 
 describe('rsi14', () => {
   it('returns null when fewer than 15 closes are provided', () => {
@@ -48,3 +48,39 @@ describe('rsi14', () => {
     expect(value!).toBeLessThanOrEqual(100);
   });
 });
+
+describe('rsi14Array', () => {
+  it('returns array of nulls when fewer than 15 closes are provided', () => {
+    expect(rsi14Array([])).toEqual([]);
+    expect(rsi14Array([1, 2, 3])).toEqual([null, null, null]);
+  });
+
+  it('returns first 14 values as null, then RSI values', () => {
+    const closes = Array.from({ length: 20 }, (_, i) => 10 + i);
+    const result = rsi14Array(closes);
+    expect(result.length).toBe(20);
+    for (let i = 0; i < 14; i++) {
+      expect(result[i]).toBeNull();
+    }
+    for (let i = 14; i < 20; i++) {
+      expect(result[i]).toBe(100);
+    }
+  });
+
+  it('matches rsi14 at the last position', () => {
+    const closes = [10, 11, 12, 11, 13, 14, 15, 16, 14, 15, 16, 17, 18, 17, 19, 16];
+    const array = rsi14Array(closes);
+    const single = rsi14(closes);
+    expect(array[array.length - 1]).toEqual(single);
+  });
+
+  it('shows uptrend when prices consistently increase', () => {
+    const closes = Array.from({ length: 20 }, (_, i) => 10 + i);
+    const result = rsi14Array(closes);
+    // Last 5 RSI values should all be 100
+    for (let i = result.length - 5; i < result.length; i++) {
+      expect(result[i]).toBe(100);
+    }
+  });
+});
+

@@ -1,4 +1,4 @@
-import { rsi14 } from '@/shared/lib/rsi';
+import { rsi14, rsi14Array } from '@/shared/lib/rsi';
 import type { PriceBars } from '@/shared/lib/yahoo';
 import {
   DEFAULT_FILTERS,
@@ -18,6 +18,32 @@ export type ScreenStockOutput =
   | { kind: 'kept'; item: ScreenerItem }
   | { kind: 'skipped'; skipped: SkippedTicker }
   | { kind: 'rejected' };
+
+/**
+ * Check if RSI values show consecutive uptrend for N days.
+ * Returns true if the last N RSI values are all increasing (each > previous).
+ */
+function isConsecutiveUptrendRSI(rsiValues: (number | null)[], days: number): boolean {
+  // Find the last N non-null RSI values
+  const recentRsi: number[] = [];
+  for (let i = rsiValues.length - 1; i >= 0 && recentRsi.length < days; i--) {
+    const value = rsiValues[i];
+    if (value !== null) {
+      recentRsi.unshift(value);
+    }
+  }
+
+  if (recentRsi.length < days) return false;
+
+  // Check if each value is strictly greater than the previous
+  for (let i = 1; i < recentRsi.length; i++) {
+    if (recentRsi[i] <= recentRsi[i - 1]) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 export function screenOne(
   input: ScreenStockInput,
@@ -48,9 +74,18 @@ export function screenOne(
     };
   }
 
-  const dailyOk = dRsi >= filters.dailyRSI14.min && dRsi <= filters.dailyRSI14.max;
   const monthlyOk = mRsi >= filters.monthlyRSI14.min;
-  if (!dailyOk || !monthlyOk) return { kind: 'rejected' };
+  if (!monthlyOk) return { kind: 'rejected' };
+
+  // Check configured daily RSI uptrend condition.
+  const uptrendDays = filters.dailyRSI14Uptrend.days;
+  const dailyRsiArray = rsi14Array(daily.closes);
+  if (!isConsecutiveUptrendRSI(dailyRsiArray, uptrendDays)) {
+    return {
+      kind: 'skipped',
+      skipped: { symbol: ticker.symbol, reason: 'insufficient_uptrend' },
+    };
+  }
 
   return {
     kind: 'kept',

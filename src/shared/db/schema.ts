@@ -99,3 +99,26 @@ export const watchlistItems = pgTable(
     compoundKey: primaryKey({ columns: [item.userId, item.symbol] }),
   }),
 );
+
+// 스코어링 수동 오버레이(정성 기준)를 유저·종목별로 저장.
+// moat/tam/governance/geopolitical: 0~5 서브스코어(미설정 시 null → 엔진이 중립 3점).
+// institutionalChange: 기관 수급 변화 보조, riskTag: 자유 텍스트 메모.
+export const scoringOverlays = pgTable(
+  'scoringOverlay',
+  {
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    symbol: text('symbol').notNull(),
+    moat: smallint('moat'),
+    tam: smallint('tam'),
+    governance: smallint('governance'),
+    geopolitical: smallint('geopolitical'),
+    institutionalChange: smallint('institutionalChange'),
+    riskTag: text('riskTag'),
+    updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (overlay) => ({
+    compoundKey: primaryKey({ columns: [overlay.userId, overlay.symbol] }),
+  }),
+);

@@ -162,7 +162,8 @@ const koMessages: Record<string, string> = {
   sectorStrong: '우위',
   sectorWeak: '약세',
   skippedSymbols: '스킵된 종목',
-  stockScreenerDescription: 'S&P 500 종목 중 일 RSI14 ∈ [50, 60] AND 월 RSI14 ≥ 70',
+  stockScreenerDescription:
+    'S&P 500 종목 중 월 RSI14 ≥ 70 AND 일 RSI14 3일 연속 상승',
   symbolNewsLabel: '뉴스 보기',
   splitMode: '분할',
   sentiment: '감정',
@@ -319,7 +320,8 @@ const enMessages: Record<string, string> = {
   sectorStrong: 'leading',
   sectorWeak: 'lagging',
   skippedSymbols: 'Skipped symbols',
-  stockScreenerDescription: 'S&P 500 stocks with daily RSI14 ∈ [50, 60] and monthly RSI14 ≥ 70',
+  stockScreenerDescription:
+    'S&P 500 stocks with monthly RSI14 ≥ 70 and daily RSI14 rising for 3 days',
   symbolNewsLabel: 'View news',
   splitMode: 'Split',
   sentiment: 'Sentiment',

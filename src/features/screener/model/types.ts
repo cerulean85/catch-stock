@@ -15,12 +15,12 @@ export interface ScreenerItem {
 
 export interface SkippedTicker {
   symbol: string;
-  reason: 'fetch_failed' | 'insufficient_daily' | 'insufficient_monthly';
+  reason: 'fetch_failed' | 'insufficient_daily' | 'insufficient_monthly' | 'insufficient_uptrend';
 }
 
 export interface ScreenerFilters {
-  dailyRSI14: { min: number; max: number };
   monthlyRSI14: { min: number };
+  dailyRSI14Uptrend: { days: number };
 }
 
 export interface ScreenerResult {
@@ -32,6 +32,6 @@ export interface ScreenerResult {
 }
 
 export const DEFAULT_FILTERS: ScreenerFilters = {
-  dailyRSI14: { min: 50, max: 60 },
   monthlyRSI14: { min: 70 },
+  dailyRSI14Uptrend: { days: 3 },
 };
