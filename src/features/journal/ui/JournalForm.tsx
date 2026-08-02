@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, useState } from 'react';
+import { useActionState, useMemo, useState } from 'react';
 import { Save } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,15 +20,23 @@ import {
   RISK_CHECKS,
   TAG_MAX_COUNT,
   TITLE_MAX,
-  type Horizon,
   type Journal,
   type RiskCheck,
   type TradeType,
 } from '../model/types';
-import { createJournalAction, updateJournalAction, type ActionState } from '../api/actions';
+import { horizonLabel, riskCheckLabel, sentimentLabel } from '../model/labels';
+import {
+  createJournalAction,
+  updateJournalAction,
+  uploadJournalImageAction,
+  type ActionState,
+} from '../api/actions';
+import { AiAssist } from './AiAssist';
 import { ChipInput } from './ChipInput';
 import { MarkdownEditor } from './MarkdownEditor';
 import { TradeTypeSelector } from './TradeTypeSelector';
+import { EMPTY_TRADE, TradeInfoFields, type TradeState } from './TradeInfoFields';
+import { useJournalDraft } from './useJournalDraft';
 
 interface Props {
   initial?: Journal;
@@ -36,9 +44,37 @@ interface Props {
   initialContent?: string;
   initialTickers?: string[];
   initialTags?: string[];
+  imageUploadEnabled?: boolean;
+  aiEnabled?: boolean;
 }
 
 const SENTIMENT_OPTIONS = [1, 2, 3, 4, 5] as const;
+const DRAFT_KEY = 'catch-stock-journal-draft';
+
+interface DraftData {
+  title: string;
+  content: string;
+  tickers: string[];
+  tags: string[];
+  tradeTypes: TradeType[];
+  riskChecks: RiskCheck[];
+  horizon: string;
+  sentiment: string;
+  trade: TradeState;
+}
+
+function tradeFromJournal(j?: Journal): TradeState {
+  if (!j) return EMPTY_TRADE;
+  const s = (v: string | null) => v ?? '';
+  return {
+    tradeQty: s(j.tradeQty),
+    tradePrice: s(j.tradePrice),
+    sellPrice: s(j.sellPrice),
+    tradeFee: s(j.tradeFee),
+    targetReturn: s(j.targetReturn),
+    actualReturn: s(j.actualReturn),
+  };
+}
 
 export function JournalForm({
   initial,
@@ -46,13 +82,13 @@ export function JournalForm({
   initialContent,
   initialTickers = [],
   initialTags = [],
+  imageUploadEnabled = false,
+  aiEnabled = false,
 }: Props) {
   const locale = useLocale();
   const { t } = locale;
   const isEdit = !!initial;
-  const action = isEdit
-    ? updateJournalAction.bind(null, initial!.id)
-    : createJournalAction;
+  const action = isEdit ? updateJournalAction.bind(null, initial!.id) : createJournalAction;
 
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, null);
 
@@ -66,15 +102,73 @@ export function JournalForm({
   const [sentiment, setSentiment] = useState<string>(
     initial?.sentiment != null ? String(initial.sentiment) : '',
   );
+  const [trade, setTrade] = useState<TradeState>(tradeFromJournal(initial));
   const tradedAt = formatDateTimeInput(initial?.tradedAt ?? new Date(), locale);
 
+  const draftValue = useMemo<DraftData>(
+    () => ({ title, content, tickers, tags, tradeTypes, riskChecks, horizon, sentiment, trade }),
+    [title, content, tickers, tags, tradeTypes, riskChecks, horizon, sentiment, trade],
+  );
+  const draft = useJournalDraft<DraftData>(DRAFT_KEY, !isEdit, draftValue);
+
+  const applyDraft = (d: DraftData) => {
+    setTitle(d.title ?? '');
+    setContent(d.content ?? '');
+    setTickers(d.tickers ?? []);
+    setTags(d.tags ?? []);
+    setTradeTypes(d.tradeTypes ?? []);
+    setRiskChecks(d.riskChecks ?? []);
+    setHorizon(d.horizon ?? '');
+    setSentiment(d.sentiment ?? '');
+    setTrade({ ...EMPTY_TRADE, ...d.trade });
+  };
+
+  const handleImageUpload = async (file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.set('file', file);
+    const res = await uploadJournalImageAction(fd);
+    if ('error' in res) throw new Error(res.error);
+    return res.url;
+  };
+
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form
+      action={formAction}
+      onSubmit={() => {
+        if (!isEdit) draft.clear();
+      }}
+      className="flex flex-col gap-6"
+    >
       <input type="hidden" name="tickers" value={JSON.stringify(tickers)} />
       <input type="hidden" name="tags" value={JSON.stringify(tags)} />
       <input type="hidden" name="tradeTypes" value={JSON.stringify(tradeTypes)} />
       <input type="hidden" name="riskChecks" value={JSON.stringify(riskChecks)} />
       <input type="hidden" name="locale" value={locale.id} />
+      {isEdit && (
+        <input type="hidden" name="expectedUpdatedAt" value={initial!.updatedAt.toISOString()} />
+      )}
+
+      {draft.pendingDraft && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/40 bg-primary/5 px-4 py-3 text-sm">
+          <span>{t('draftFound')}</span>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                const d = draft.restore();
+                if (d) applyDraft(d);
+              }}
+            >
+              {t('draftRestore')}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={draft.dismiss}>
+              {t('draftDiscard')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
         <div className="space-y-2">
@@ -158,59 +252,7 @@ export function JournalForm({
         })}
       </fieldset>
 
-      <fieldset className="grid grid-cols-2 gap-3 rounded-md border p-4 sm:grid-cols-4">
-        <legend className="px-1 text-sm font-medium">{t('tradeInfoOptional')}</legend>
-        <div className="space-y-1.5">
-          <Label htmlFor="tradeQty" className="text-xs">{t('tradeQty')}</Label>
-          <Input
-            id="tradeQty"
-            name="tradeQty"
-            type="number"
-            step="any"
-            defaultValue={initial?.tradeQty ?? ''}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="tradePrice" className="text-xs">{t('tradePrice')}</Label>
-          <Input
-            id="tradePrice"
-            name="tradePrice"
-            type="number"
-            step="any"
-            defaultValue={initial?.tradePrice ?? ''}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="tradeFee" className="text-xs">{t('fee')}</Label>
-          <Input
-            id="tradeFee"
-            name="tradeFee"
-            type="number"
-            step="any"
-            defaultValue={initial?.tradeFee ?? ''}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="targetReturn" className="text-xs">{t('targetReturn')}</Label>
-          <Input
-            id="targetReturn"
-            name="targetReturn"
-            type="number"
-            step="any"
-            defaultValue={initial?.targetReturn ?? ''}
-          />
-        </div>
-        <div className="space-y-1.5 sm:col-span-1">
-          <Label htmlFor="actualReturn" className="text-xs">{t('actualReturn')}</Label>
-          <Input
-            id="actualReturn"
-            name="actualReturn"
-            type="number"
-            step="any"
-            defaultValue={initial?.actualReturn ?? ''}
-          />
-        </div>
-      </fieldset>
+      <TradeInfoFields value={trade} onChange={setTrade} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -255,6 +297,24 @@ export function JournalForm({
         </div>
       </div>
 
+      {aiEnabled && (
+        <AiAssist
+          title={title}
+          content={content}
+          tickers={tickers}
+          tradeTypes={tradeTypes}
+          existingTags={tags}
+          onApplyDraft={(text) =>
+            setContent((current) => (current.trim() ? `${current}\n\n${text}` : text))
+          }
+          onAddTag={(tag) =>
+            setTags((current) =>
+              current.includes(tag) ? current : [...current, tag].slice(0, TAG_MAX_COUNT),
+            )
+          }
+        />
+      )}
+
       <div className="space-y-2">
         <Label>{t('bodyMarkdown')}</Label>
         <MarkdownEditor
@@ -262,6 +322,8 @@ export function JournalForm({
           value={content}
           onChange={setContent}
           placeholder={t('placeholderJournalBody')}
+          imageUploadEnabled={imageUploadEnabled}
+          onImageUpload={handleImageUpload}
         />
       </div>
 
@@ -285,30 +347,4 @@ export function JournalForm({
       </div>
     </form>
   );
-}
-
-function horizonLabel(value: Horizon, t: (key: string) => string): string {
-  return t({ short: 'horizonShort', mid: 'horizonMid', long: 'horizonLong' }[value]);
-}
-
-function sentimentLabel(value: number, t: (key: string) => string): string {
-  const key = {
-    1: 'sentimentVeryNegative',
-    2: 'sentimentNegative',
-    3: 'sentimentNeutral',
-    4: 'sentimentPositive',
-    5: 'sentimentVeryPositive',
-  }[value];
-  return key ? t(key) : String(value);
-}
-
-function riskCheckLabel(value: RiskCheck, t: (key: string) => string): string {
-  return t({
-    entryReason: 'riskEntryReason',
-    stopLoss: 'riskStopLoss',
-    positionSize: 'riskPositionSize',
-    earningsDate: 'riskEarningsDate',
-    marketDirection: 'riskMarketDirection',
-    invalidation: 'riskInvalidation',
-  }[value]);
 }

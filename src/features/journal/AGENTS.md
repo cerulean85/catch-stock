@@ -9,3 +9,9 @@
 - 마크다운 렌더는 `ui/MarkdownPreview.tsx` 한 곳에서. raw HTML은 비활성(`react-markdown` 기본). XSS 방지.
 - 모든 페이지에서 `auth()` 검증 필수. 미인증 시 `redirect('/login')`.
 - 새 필드 추가 시: schema → types → validate → form 순으로 일관되게 확장.
+- 라벨(투자 유형/감정/기간/리스크) → i18n 키 매핑은 `model/labels.ts` 한 곳에서. UI에서 중복 정의 금지.
+- 거래 지표(총액/손익/수익률) 계산은 `model/metrics.ts::computeTradeMetrics` 순수 함수만 사용. 통계·정렬·표시 모두 이걸 재사용.
+- 내보내기는 서버 액션이 문자열(CSV/MD)을 반환하고 다운로드는 클라이언트(`ui/download.ts`)가 처리. 파일 다운로드용 REST 라우트는 두지 않음.
+- 이미지 업로드는 `BLOB_READ_WRITE_TOKEN`이 있을 때만 활성(`uploadJournalImageAction`). 미설정 시 UI 숨김, 외부 URL 링크로 대체.
+- 수정 저장은 낙관적 잠금: 폼의 `expectedUpdatedAt`와 DB `updatedAt` 불일치 시 충돌로 거부.
+- AI 보조(태그 추천/본문 초안)는 `api/ai.ts`(`@anthropic-ai/sdk`, 모델 기본값 `claude-opus-4-8`, `JOURNAL_AI_MODEL`로 교체 가능). `ANTHROPIC_API_KEY`가 있을 때만 활성(`aiEnabled`), 없으면 UI 숨김.

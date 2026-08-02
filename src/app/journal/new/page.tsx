@@ -37,6 +37,8 @@ export default async function NewJournalPage({ searchParams }: Props) {
         initialTitle={sp.title}
         initialTickers={initialTickers}
         initialTags={initialTags}
+        imageUploadEnabled={Boolean(process.env.BLOB_READ_WRITE_TOKEN)}
+        aiEnabled={Boolean(process.env.ANTHROPIC_API_KEY)}
       />
     </div>
   );

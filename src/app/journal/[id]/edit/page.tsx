@@ -24,7 +24,11 @@ export default async function EditJournalPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
       <JournalPageHeader mode="edit" />
-      <JournalForm initial={journal} />
+      <JournalForm
+        initial={journal}
+        imageUploadEnabled={Boolean(process.env.BLOB_READ_WRITE_TOKEN)}
+        aiEnabled={Boolean(process.env.ANTHROPIC_API_KEY)}
+      />
     </div>
   );
 }

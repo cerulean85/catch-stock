@@ -76,6 +76,7 @@ export const journals = pgTable('journal', {
   riskChecks: text('riskChecks').array().notNull().default([]),
   tradeQty: numeric('tradeQty'),
   tradePrice: numeric('tradePrice'),
+  sellPrice: numeric('sellPrice'),
   tradeFee: numeric('tradeFee'),
   sentiment: smallint('sentiment'),
   horizon: text('horizon'),

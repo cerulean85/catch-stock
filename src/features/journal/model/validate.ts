@@ -94,6 +94,7 @@ export function parseJournalInput(form: FormData): JournalInput {
     riskChecks,
     tradeQty: asNumberOrNull(form.get('tradeQty')),
     tradePrice: asNumberOrNull(form.get('tradePrice')),
+    sellPrice: asNumberOrNull(form.get('sellPrice')),
     tradeFee: asNumberOrNull(form.get('tradeFee')),
     sentiment,
     horizon,

@@ -5,12 +5,34 @@ import { useEffect, useState, useTransition } from 'react';
 import { Search, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useLocale } from '@/features/locale';
-import { TRADE_TYPES, type JournalFilters, type TradeType } from '../model/types';
+import {
+  DEFAULT_SORT,
+  JOURNAL_SORTS,
+  TRADE_TYPES,
+  type JournalFilters,
+  type JournalSort,
+  type TradeType,
+} from '../model/types';
+import { tradeTypeLabel } from '../model/labels';
 
 interface Props {
   initial: JournalFilters;
 }
+
+const SORT_LABELS: Record<JournalSort, string> = {
+  tradedAt: 'sortLatest',
+  oldest: 'sortOldest',
+  return: 'sortReturn',
+  sentiment: 'sortSentiment',
+};
 
 export function JournalListFilters({ initial }: Props) {
   const { t } = useLocale();
@@ -19,42 +41,68 @@ export function JournalListFilters({ initial }: Props) {
   const [, startTransition] = useTransition();
   const [q, setQ] = useState(initial.q ?? '');
 
+  // 검색어·정렬·필터가 바뀌면 항상 1페이지로 되돌린 URL을 만든다.
+  const buildUrl = (mutate: (sp: URLSearchParams) => void) => {
+    const sp = new URLSearchParams(params.toString());
+    mutate(sp);
+    sp.delete('page');
+    const qs = sp.toString();
+    return qs ? `/journal?${qs}` : '/journal';
+  };
+
   useEffect(() => {
     const id = setTimeout(() => {
-      const next = new URLSearchParams(params.toString());
-      if (q.trim()) next.set('q', q.trim());
-      else next.delete('q');
-      const qs = next.toString();
-      startTransition(() => {
-        router.replace(qs ? `/journal?${qs}` : '/journal');
+      const url = buildUrl((sp) => {
+        if (q.trim()) sp.set('q', q.trim());
+        else sp.delete('q');
       });
+      startTransition(() => router.replace(url));
     }, 300);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
-  const setFilter = (key: 'ticker' | 'tag' | 'tradeType', value: string | null) => {
-    const next = new URLSearchParams(params.toString());
-    if (value) next.set(key, value);
-    else next.delete(key);
-    const qs = next.toString();
-    router.replace(qs ? `/journal?${qs}` : '/journal');
+  const setFilter = (key: 'ticker' | 'tag' | 'tradeType' | 'sort', value: string | null) => {
+    router.replace(
+      buildUrl((sp) => {
+        if (value) sp.set(key, value);
+        else sp.delete(key);
+      }),
+    );
   };
 
   const activeTradeType = (params.get('tradeType') ?? '') as TradeType | '';
   const activeTicker = params.get('ticker') ?? '';
   const activeTag = params.get('tag') ?? '';
+  const activeSort = (params.get('sort') ?? DEFAULT_SORT) as JournalSort;
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={t('searchTitleBody')}
-          className="pl-9"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('searchTitleBody')}
+            className="pl-9"
+          />
+        </div>
+        <Select
+          value={activeSort}
+          onValueChange={(v) => setFilter('sort', v === DEFAULT_SORT ? null : v)}
+        >
+          <SelectTrigger className="sm:w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {JOURNAL_SORTS.map((s) => (
+              <SelectItem key={s} value={s}>
+                {t(SORT_LABELS[s])}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">{t('tradeType')}:</span>
@@ -67,10 +115,7 @@ export function JournalListFilters({ initial }: Props) {
               onClick={() => setFilter('tradeType', active ? null : tradeType)}
               aria-pressed={active}
             >
-              <Badge
-                variant={active ? 'default' : 'outline'}
-                className="cursor-pointer select-none"
-              >
+              <Badge variant={active ? 'default' : 'outline'} className="cursor-pointer select-none">
                 {tradeTypeLabel(tradeType, t)}
               </Badge>
             </button>
@@ -86,7 +131,11 @@ export function JournalListFilters({ initial }: Props) {
               />
             )}
             {activeTag && (
-              <ActiveChip label={`${t('tag')}: ${activeTag}`} onClear={() => setFilter('tag', null)} clearLabel={t('clear')} />
+              <ActiveChip
+                label={`${t('tag')}: ${activeTag}`}
+                onClear={() => setFilter('tag', null)}
+                clearLabel={t('clear')}
+              />
             )}
           </div>
         )}
@@ -117,16 +166,4 @@ function ActiveChip({
       </button>
     </Badge>
   );
-}
-
-function tradeTypeLabel(value: TradeType, t: (key: string) => string): string {
-  const keys: Record<TradeType, string> = {
-    buy: 'tradeTypeBuy',
-    sell: 'tradeTypeSell',
-    hold: 'tradeTypeHold',
-    analysis: 'tradeTypeAnalysis',
-    plan: 'tradeTypePlan',
-    reflection: 'tradeTypeReflection',
-  };
-  return t(keys[value]);
 }

@@ -28,6 +28,7 @@ export interface Journal {
   riskChecks: RiskCheck[];
   tradeQty: string | null;
   tradePrice: string | null;
+  sellPrice: string | null;
   tradeFee: string | null;
   sentiment: number | null;
   horizon: Horizon | null;
@@ -47,6 +48,7 @@ export interface JournalInput {
   riskChecks: RiskCheck[];
   tradeQty: number | null;
   tradePrice: number | null;
+  sellPrice: number | null;
   tradeFee: number | null;
   sentiment: number | null;
   horizon: Horizon | null;
@@ -55,9 +57,76 @@ export interface JournalInput {
   tradedAt: Date;
 }
 
+export const JOURNAL_SORTS = ['tradedAt', 'oldest', 'return', 'sentiment'] as const;
+export type JournalSort = (typeof JOURNAL_SORTS)[number];
+export const DEFAULT_SORT: JournalSort = 'tradedAt';
+export const PAGE_SIZE = 12;
+
+export const JOURNAL_VIEWS = ['grid', 'list'] as const;
+export type JournalView = (typeof JOURNAL_VIEWS)[number];
+
 export interface JournalFilters {
   q?: string;
   ticker?: string;
   tag?: string;
   tradeType?: TradeType;
+  sort?: JournalSort;
+  page?: number;
+}
+
+export interface JournalListResult {
+  items: Journal[];
+  total: number;
+  page: number;
+  pageCount: number;
+}
+
+export interface TickerStat {
+  ticker: string;
+  count: number;
+  avgReturn: number | null;
+  winRate: number | null;
+}
+
+export interface SentimentStat {
+  sentiment: number;
+  count: number;
+  avgReturn: number | null;
+}
+
+export interface TradeTypeStat {
+  tradeType: TradeType;
+  count: number;
+}
+
+export interface RiskComplianceStat {
+  withStopLoss: { count: number; avgReturn: number | null };
+  withoutStopLoss: { count: number; avgReturn: number | null };
+}
+
+export interface MonthlyStat {
+  month: string; // 'YYYY-MM'
+  count: number;
+  avgReturn: number | null;
+}
+
+export interface TradeHighlight {
+  id: string;
+  title: string;
+  ticker: string;
+  returnPct: number;
+}
+
+export interface JournalStats {
+  total: number;
+  withReturn: number;
+  overallWinRate: number | null;
+  overallAvgReturn: number | null;
+  tickers: TickerStat[];
+  sentiments: SentimentStat[];
+  tradeTypes: TradeTypeStat[];
+  riskCompliance: RiskComplianceStat;
+  monthly: MonthlyStat[];
+  best: TradeHighlight | null;
+  worst: TradeHighlight | null;
 }
