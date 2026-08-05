@@ -182,6 +182,10 @@ const koMessages: Record<string, string> = {
   principlesEmpty: '아직 적어둔 투자 원칙이 없습니다. 편집을 눌러 매매 기준을 남겨보세요.',
   principlesPlaceholder: '예: 손절선 -8%는 반드시 지킨다\n실적 발표 직전에는 신규 진입하지 않는다',
   confirm: '확인',
+  swingGoldilocks: '중기 스윙 골디락스',
+  swingGoldilocksEmpty: '아직 적어둔 내용이 없습니다. 편집을 눌러 스윙 진입에 좋은 조건을 남겨보세요.',
+  swingGoldilocksPlaceholder:
+    '예: 20일선 눌림 + 거래량 감소 후 재확대\n실적 서프라이즈 이후 첫 조정\n금리 하락 국면에서 소외됐던 대형주',
   marketCloseTodos: '장 개시 전후 할 일',
   marketCloseTodosEmpty: '아직 메모가 없습니다.',
   preOpenTodo: '장 개시 전',
@@ -337,6 +341,10 @@ const enMessages: Record<string, string> = {
   principlesPlaceholder:
     'e.g. Always honor the -8% stop loss\nNo new entries right before earnings',
   confirm: 'Done',
+  swingGoldilocks: 'Mid-term Swing Goldilocks',
+  swingGoldilocksEmpty: 'Nothing here yet. Hit edit to note the setups you want to swing.',
+  swingGoldilocksPlaceholder:
+    'e.g. Pullback to the 20-day with volume drying up, then expanding\nFirst dip after an earnings surprise\nLaggard large caps while rates fall',
   marketCloseTodos: 'Around the Session',
   marketCloseTodosEmpty: 'No notes yet.',
   preOpenTodo: 'Before open',

@@ -7,6 +7,8 @@ import { PrincipleCard } from '@/features/principles';
 import { getPrinciple } from '@/features/principles/api/server';
 import { MarketNoteCard } from '@/features/market-notes';
 import { getMarketNote } from '@/features/market-notes/api/server';
+import { SwingNoteCard } from '@/features/swing-notes';
+import { getSwingNote } from '@/features/swing-notes/api/server';
 import {
   JOURNAL_SORTS,
   JOURNAL_STATUSES,
@@ -68,9 +70,10 @@ export default async function JournalIndexPage({ searchParams }: Props) {
   // 서버는 사용자의 시간대를 모르므로 기본 달만 기본 시간대로 정한다. 실제 날짜 배치는 클라이언트가 한다.
   const month = parseMonth(sp.month, new Date(), DEFAULT_TIME_ZONE);
 
-  const [principle, marketNote] = await Promise.all([
+  const [principle, marketNote, swingNote] = await Promise.all([
     getPrinciple(session.user.id),
     getMarketNote(session.user.id),
+    getSwingNote(session.user.id),
   ]);
 
   let result;
@@ -86,6 +89,7 @@ export default async function JournalIndexPage({ searchParams }: Props) {
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
       <PrincipleCard content={principle} />
       <MarketNoteCard note={marketNote} />
+      <SwingNoteCard content={swingNote} />
       <JournalList result={result} filters={filters} view={view} month={month} />
     </div>
   );

@@ -109,6 +109,15 @@ export const marketNotes = pgTable('marketNote', {
   updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
 });
 
+// 유저별 '중기 스윙 골디락스' 메모 1건. 장 개시 전후 할 일 바로 아래에 띄운다.
+export const swingNotes = pgTable('swingNote', {
+  userId: text('userId')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull().default(''),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
 export const watchlistItems = pgTable(
   'watchlistItem',
   {

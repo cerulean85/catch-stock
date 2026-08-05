@@ -85,6 +85,13 @@
       "when": 1785935639585,
       "tag": "0011_lush_jack_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785937834525,
+      "tag": "0012_cold_korg",
+      "breakpoints": true
     }
   ]
 }
