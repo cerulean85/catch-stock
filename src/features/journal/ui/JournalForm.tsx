@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useActionState, useMemo, useState } from 'react';
-import { Save } from 'lucide-react';
+import { FileClock, Save } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -88,6 +88,9 @@ export function JournalForm({
   const locale = useLocale();
   const { t } = locale;
   const isEdit = !!initial;
+  // 이미 발행된 일지는 다시 초안으로 되돌리지 않는다.
+  const isEditingDraft = initial?.status === 'draft';
+  const canSaveDraft = !isEdit || isEditingDraft;
   const action = isEdit ? updateJournalAction.bind(null, initial!.id) : createJournalAction;
 
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, null);
@@ -340,9 +343,21 @@ export function JournalForm({
         >
           {t('cancel')}
         </Link>
-        <Button type="submit" disabled={pending}>
+        {canSaveDraft && (
+          <Button type="submit" name="status" value="draft" variant="outline" disabled={pending}>
+            <FileClock className="mr-2 h-4 w-4" />
+            {t('saveDraft')}
+          </Button>
+        )}
+        <Button type="submit" name="status" value="published" disabled={pending}>
           <Save className="mr-2 h-4 w-4" />
-          {pending ? t('saving') : isEdit ? t('updateJournal') : t('saveJournal')}
+          {pending
+            ? t('saving')
+            : isEditingDraft
+              ? t('publishJournal')
+              : isEdit
+                ? t('updateJournal')
+                : t('saveJournal')}
         </Button>
       </div>
     </form>

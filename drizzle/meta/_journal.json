@@ -43,6 +43,48 @@
       "when": 1785670718750,
       "tag": "0005_gorgeous_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785933909838,
+      "tag": "0006_swift_grim_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785934405818,
+      "tag": "0007_broad_skin",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785935098790,
+      "tag": "0008_flaky_luminals",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785935350227,
+      "tag": "0009_ordinary_ender_wiggin",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785935629030,
+      "tag": "0010_nervous_jackpot",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785935639585,
+      "tag": "0011_lush_jack_flag",
+      "breakpoints": true
     }
   ]
 }

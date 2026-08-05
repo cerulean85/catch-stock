@@ -27,6 +27,7 @@ function toJournal(row: DbRow): Journal {
     userId: row.userId,
     title: row.title,
     content: row.content,
+    status: row.status as Journal['status'],
     tickers: row.tickers ?? [],
     tags: row.tags ?? [],
     tradeTypes: (row.tradeTypes ?? []) as Journal['tradeTypes'],
@@ -51,6 +52,7 @@ function toInsertValues(userId: string, input: JournalInput) {
     userId,
     title: input.title,
     content: input.content,
+    status: input.status,
     tickers: input.tickers,
     tags: input.tags,
     tradeTypes: input.tradeTypes,
@@ -83,6 +85,9 @@ function buildConditions(userId: string, filters: JournalFilters): SQL[] {
   }
   if (filters.tradeType) {
     conditions.push(sql`${journals.tradeTypes} @> ARRAY[${filters.tradeType}]::text[]`);
+  }
+  if (filters.status) {
+    conditions.push(eq(journals.status, filters.status));
   }
   return conditions;
 }
@@ -220,7 +225,8 @@ function winRate(returns: number[]): number | null {
 }
 
 export async function getJournalStats(userId: string): Promise<JournalStats> {
-  const all = await listAllJournals(userId);
+  // 초안은 아직 확정되지 않은 기록이라 통계에서 제외한다.
+  const all = await listAllJournals(userId, { status: 'published' });
 
   const withReturns = all
     .map((j) => ({ j, r: effectiveReturn(j) }))

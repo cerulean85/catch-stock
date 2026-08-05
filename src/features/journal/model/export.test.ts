@@ -8,6 +8,7 @@ function makeJournal(over: Partial<Journal>): Journal {
     userId: 'u',
     title: 'AAPL 매수',
     content: '본문 내용',
+    status: 'published',
     tickers: ['AAPL'],
     tags: ['#가치투자'],
     tradeTypes: ['buy'],

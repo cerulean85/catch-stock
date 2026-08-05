@@ -1,0 +1,1 @@
+ALTER TABLE "marketNote" ADD COLUMN "intraday" text DEFAULT '' NOT NULL;

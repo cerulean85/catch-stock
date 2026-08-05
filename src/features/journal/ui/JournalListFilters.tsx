@@ -16,9 +16,11 @@ import { useLocale } from '@/features/locale';
 import {
   DEFAULT_SORT,
   JOURNAL_SORTS,
+  JOURNAL_STATUSES,
   TRADE_TYPES,
   type JournalFilters,
   type JournalSort,
+  type JournalStatus,
   type TradeType,
 } from '../model/types';
 import { tradeTypeLabel } from '../model/labels';
@@ -32,6 +34,11 @@ const SORT_LABELS: Record<JournalSort, string> = {
   oldest: 'sortOldest',
   return: 'sortReturn',
   sentiment: 'sortSentiment',
+};
+
+const STATUS_LABELS: Record<JournalStatus, string> = {
+  draft: 'statusDraft',
+  published: 'statusPublished',
 };
 
 export function JournalListFilters({ initial }: Props) {
@@ -62,7 +69,10 @@ export function JournalListFilters({ initial }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
-  const setFilter = (key: 'ticker' | 'tag' | 'tradeType' | 'sort', value: string | null) => {
+  const setFilter = (
+    key: 'ticker' | 'tag' | 'tradeType' | 'sort' | 'status',
+    value: string | null,
+  ) => {
     router.replace(
       buildUrl((sp) => {
         if (value) sp.set(key, value);
@@ -75,6 +85,7 @@ export function JournalListFilters({ initial }: Props) {
   const activeTicker = params.get('ticker') ?? '';
   const activeTag = params.get('tag') ?? '';
   const activeSort = (params.get('sort') ?? DEFAULT_SORT) as JournalSort;
+  const activeStatus = (params.get('status') ?? '') as JournalStatus | '';
 
   return (
     <div className="flex flex-col gap-3">
@@ -88,6 +99,22 @@ export function JournalListFilters({ initial }: Props) {
             className="pl-9"
           />
         </div>
+        <Select
+          value={activeStatus || 'all'}
+          onValueChange={(v) => setFilter('status', v === 'all' ? null : v)}
+        >
+          <SelectTrigger className="sm:w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('statusAll')}</SelectItem>
+            {JOURNAL_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {t(STATUS_LABELS[s])}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select
           value={activeSort}
           onValueChange={(v) => setFilter('sort', v === DEFAULT_SORT ? null : v)}

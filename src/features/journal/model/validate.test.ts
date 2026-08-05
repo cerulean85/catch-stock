@@ -26,13 +26,15 @@ describe('parseJournalInput', () => {
     expect(() => parseJournalInput(fd)).toThrow(JournalValidationError);
   });
 
-  it('throws when no ticker', () => {
+  it('allows publishing without a ticker', () => {
     const fd = makeForm({
       title: 'ok',
       content: 'body',
       tickers: JSON.stringify([]),
     });
-    expect(() => parseJournalInput(fd)).toThrow(JournalValidationError);
+    const input = parseJournalInput(fd);
+    expect(input.tickers).toEqual([]);
+    expect(input.status).toBe('published');
   });
 
   it('normalizes tickers to uppercase and filters invalid trade types', () => {
@@ -59,6 +61,29 @@ describe('parseJournalInput', () => {
     expect(parseJournalInput(makeForm({ ...base, sentiment: '0' })).sentiment).toBeNull();
     expect(parseJournalInput(makeForm({ ...base, sentiment: '6' })).sentiment).toBeNull();
     expect(parseJournalInput(makeForm({ ...base, sentiment: '' })).sentiment).toBeNull();
+  });
+
+  it('defaults status to published and accepts draft', () => {
+    const base = {
+      title: 'ok',
+      content: 'body',
+      tickers: JSON.stringify(['AAPL']),
+    };
+    expect(parseJournalInput(makeForm(base)).status).toBe('published');
+    expect(parseJournalInput(makeForm({ ...base, status: 'draft' })).status).toBe('draft');
+    // 알 수 없는 값은 published로 떨어진다.
+    expect(parseJournalInput(makeForm({ ...base, status: 'weird' })).status).toBe('published');
+  });
+
+  it('allows an empty body for a draft only', () => {
+    const base = { title: '쓰다 만 글', content: '', tickers: JSON.stringify([]) };
+    expect(parseJournalInput(makeForm({ ...base, status: 'draft' })).content).toBe('');
+    expect(() => parseJournalInput(makeForm(base))).toThrow(JournalValidationError);
+  });
+
+  it('still requires a title for a draft', () => {
+    const fd = makeForm({ title: '', content: '', status: 'draft' });
+    expect(() => parseJournalInput(fd)).toThrow(JournalValidationError);
   });
 
   it('parses numeric trade fields and ignores non-numeric', () => {

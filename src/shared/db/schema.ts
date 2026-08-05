@@ -70,6 +70,8 @@ export const journals = pgTable('journal', {
     .references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   content: text('content').notNull(),
+  // 'draft'(임시저장) | 'published'. 기존 행은 모두 published로 본다.
+  status: text('status').notNull().default('published'),
   tickers: text('tickers').array().notNull().default([]),
   tags: text('tags').array().notNull().default([]),
   tradeTypes: text('tradeTypes').array().notNull().default([]),
@@ -84,6 +86,26 @@ export const journals = pgTable('journal', {
   actualReturn: numeric('actualReturn'),
   tradedAt: timestamp('tradedAt', { mode: 'date' }).notNull().defaultNow(),
   createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
+// 유저별 투자 원칙 1건. 일지 목록 상단에 항상 띄워두는 매매 기준 메모.
+export const investmentPrinciples = pgTable('investmentPrinciple', {
+  userId: text('userId')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull().default(''),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
+// 유저별 장 개시 전/장 중/마감 후 할 일 메모 1건. 투자 원칙 바로 아래에 띄운다.
+export const marketNotes = pgTable('marketNote', {
+  userId: text('userId')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  preOpen: text('preOpen').notNull().default(''),
+  intraday: text('intraday').notNull().default(''),
+  postClose: text('postClose').notNull().default(''),
   updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
 });
 

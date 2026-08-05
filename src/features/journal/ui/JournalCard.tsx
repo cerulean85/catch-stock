@@ -24,7 +24,14 @@ export function JournalCard({ journal }: { journal: Journal }) {
     >
       <Card className="h-full">
         <CardHeader className="pb-3">
-          <CardTitle className="line-clamp-2 text-base sm:text-lg">{journal.title}</CardTitle>
+          <CardTitle className="line-clamp-2 text-base sm:text-lg">
+            {journal.status === 'draft' && (
+              <Badge variant="outline" className="mr-1.5 align-middle text-[10px] text-amber-600 dark:text-amber-400">
+                {t('statusDraft')}
+              </Badge>
+            )}
+            {journal.title}
+          </CardTitle>
           <p className="text-xs text-muted-foreground tabular-nums">
             {formatDateTime(journal.tradedAt, locale)}
           </p>

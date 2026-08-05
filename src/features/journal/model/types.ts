@@ -14,6 +14,9 @@ export const RISK_CHECKS = [
 ] as const;
 export type RiskCheck = (typeof RISK_CHECKS)[number];
 
+export const JOURNAL_STATUSES = ['draft', 'published'] as const;
+export type JournalStatus = (typeof JOURNAL_STATUSES)[number];
+
 export const TITLE_MAX = 100;
 export const TAG_MAX_COUNT = 15;
 
@@ -22,6 +25,7 @@ export interface Journal {
   userId: string;
   title: string;
   content: string;
+  status: JournalStatus;
   tickers: string[];
   tags: string[];
   tradeTypes: TradeType[];
@@ -42,6 +46,7 @@ export interface Journal {
 export interface JournalInput {
   title: string;
   content: string;
+  status: JournalStatus;
   tickers: string[];
   tags: string[];
   tradeTypes: TradeType[];
@@ -70,6 +75,8 @@ export interface JournalFilters {
   ticker?: string;
   tag?: string;
   tradeType?: TradeType;
+  /** 미지정이면 초안·발행 모두 조회. */
+  status?: JournalStatus;
   sort?: JournalSort;
   page?: number;
 }

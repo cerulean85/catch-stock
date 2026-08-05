@@ -1,0 +1,1 @@
+ALTER TABLE "marketNote" ADD COLUMN "preOpen" text DEFAULT '' NOT NULL;

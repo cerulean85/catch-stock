@@ -6,6 +6,7 @@ import {
   TRADE_TYPES,
   type Horizon,
   type JournalInput,
+  type JournalStatus,
   type RiskCheck,
   type TradeType,
 } from './types';
@@ -41,7 +42,15 @@ function parseListJSON(raw: FormDataEntryValue | null): string[] {
   }
 }
 
+/**
+ * 필수는 제목뿐. 종목은 시황 메모처럼 특정 종목이 없는 글도 있어 선택 항목이고,
+ * 본문은 임시저장(draft)에서만 비워둘 수 있다.
+ */
 export function parseJournalInput(form: FormData): JournalInput {
+  const status: JournalStatus =
+    asTrimmed(form.get('status')) === 'draft' ? 'draft' : 'published';
+  const isDraft = status === 'draft';
+
   const title = asTrimmed(form.get('title'));
   if (!title) throw new JournalValidationError('제목을 입력해주세요.');
   if (title.length > TITLE_MAX) {
@@ -49,14 +58,11 @@ export function parseJournalInput(form: FormData): JournalInput {
   }
 
   const content = asTrimmed(form.get('content'));
-  if (!content) throw new JournalValidationError('본문을 입력해주세요.');
+  if (!content && !isDraft) throw new JournalValidationError('본문을 입력해주세요.');
 
   const tickers = parseListJSON(form.get('tickers'))
     .map((t) => t.toUpperCase())
     .slice(0, 50);
-  if (tickers.length === 0) {
-    throw new JournalValidationError('하나 이상의 종목을 입력해주세요.');
-  }
 
   const tags = parseListJSON(form.get('tags')).slice(0, TAG_MAX_COUNT);
 
@@ -88,6 +94,7 @@ export function parseJournalInput(form: FormData): JournalInput {
   return {
     title,
     content,
+    status,
     tickers,
     tags,
     tradeTypes,

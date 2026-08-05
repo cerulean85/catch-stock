@@ -37,7 +37,8 @@ export async function createJournalAction(
   }
   const journal = await dbCreate(userId, input);
   revalidatePath('/journal');
-  redirect(`/journal/${journal.id}`);
+  // 임시저장은 계속 쓰던 흐름을 유지하도록 편집 화면으로 돌려보낸다.
+  redirect(input.status === 'draft' ? `/journal/${journal.id}/edit` : `/journal/${journal.id}`);
 }
 
 export async function updateJournalAction(
@@ -70,7 +71,7 @@ export async function updateJournalAction(
   }
   revalidatePath('/journal');
   revalidatePath(`/journal/${id}`);
-  redirect(`/journal/${id}`);
+  redirect(input.status === 'draft' ? `/journal/${id}/edit` : `/journal/${id}`);
 }
 
 export async function deleteJournalAction(id: string): Promise<void> {

@@ -25,7 +25,17 @@ export function JournalRow({ journal }: { journal: Journal }) {
       className="flex items-center gap-3 rounded-md border px-4 py-3 transition-colors hover:bg-muted/30"
     >
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{journal.title}</p>
+        <p className="truncate text-sm font-medium">
+          {journal.status === 'draft' && (
+            <Badge
+              variant="outline"
+              className="mr-1.5 px-1.5 py-0 align-middle text-[10px] text-amber-600 dark:text-amber-400"
+            >
+              {t('statusDraft')}
+            </Badge>
+          )}
+          {journal.title}
+        </p>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
           <span className="tabular-nums">{formatDateTime(journal.tradedAt, locale)}</span>
           {journal.tickers.slice(0, 4).map((ticker) => (

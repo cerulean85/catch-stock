@@ -113,7 +113,7 @@ export function JournalCalendar({ month, items }: Props) {
               </div>
               <div className="flex flex-col gap-1">
                 {entries.slice(0, MAX_PER_DAY).map((journal) => (
-                  <DayEntry key={journal.id} journal={journal} />
+                  <DayEntry key={journal.id} journal={journal} draftLabel={t('statusDraft')} />
                 ))}
                 {entries.length > MAX_PER_DAY && (
                   <span className="px-1 text-[10px] text-muted-foreground">
@@ -129,10 +129,12 @@ export function JournalCalendar({ month, items }: Props) {
   );
 }
 
-function DayEntry({ journal }: { journal: Journal }) {
+function DayEntry({ journal, draftLabel }: { journal: Journal; draftLabel: string }) {
+  const isDraft = journal.status === 'draft';
   const ret = effectiveReturn(journal);
-  const tone =
-    ret == null || ret === 0
+  const tone = isDraft
+    ? 'border border-dashed bg-transparent text-muted-foreground'
+    : ret == null || ret === 0
       ? 'bg-muted text-foreground/80'
       : ret > 0
         ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
@@ -141,7 +143,7 @@ function DayEntry({ journal }: { journal: Journal }) {
   return (
     <Link
       href={`/journal/${journal.id}`}
-      title={journal.title}
+      title={isDraft ? `[${draftLabel}] ${journal.title}` : journal.title}
       className={`truncate rounded px-1 py-0.5 text-[11px] transition-opacity hover:opacity-70 ${tone}`}
     >
       {journal.tickers[0] ? `${journal.tickers[0]} · ` : ''}

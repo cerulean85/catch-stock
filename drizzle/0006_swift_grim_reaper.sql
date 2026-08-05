@@ -1,0 +1,1 @@
+ALTER TABLE "journal" ADD COLUMN "status" text DEFAULT 'published' NOT NULL;

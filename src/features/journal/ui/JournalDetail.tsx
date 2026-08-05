@@ -45,7 +45,17 @@ export function JournalDetail({ journal }: { journal: Journal }) {
     <article className="flex flex-col gap-6">
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{journal.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            {journal.status === 'draft' && (
+              <Badge
+                variant="outline"
+                className="mr-2 align-middle text-xs text-amber-600 dark:text-amber-400"
+              >
+                {t('statusDraft')}
+              </Badge>
+            )}
+            {journal.title}
+          </h1>
           <div className="flex items-center gap-2">
             <Button
               type="button"

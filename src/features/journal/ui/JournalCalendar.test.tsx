@@ -14,6 +14,7 @@ function journal(id: string, title: string, tradedAt: string, tickers: string[] 
     userId: 'u1',
     title,
     content: '',
+    status: 'published',
     tickers,
     tags: [],
     tradeTypes: [],

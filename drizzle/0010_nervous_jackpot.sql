@@ -1,0 +1,1 @@
+ALTER TABLE "marketNote" DROP COLUMN "preClose";

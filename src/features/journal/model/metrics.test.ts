@@ -47,6 +47,7 @@ function makeJournal(over: Partial<Journal>): Journal {
     userId: 'u',
     title: 't',
     content: 'c',
+    status: 'published',
     tickers: ['AAPL'],
     tags: [],
     tradeTypes: [],

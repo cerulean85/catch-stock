@@ -3,12 +3,18 @@ import { auth } from '@/features/auth/model/auth';
 import { listJournals, listJournalsInRange } from '@/features/journal/api/server';
 import { JournalList } from '@/features/journal';
 import { gridRange, monthGridDays, parseMonth } from '@/features/journal/model/calendar';
+import { PrincipleCard } from '@/features/principles';
+import { getPrinciple } from '@/features/principles/api/server';
+import { MarketNoteCard } from '@/features/market-notes';
+import { getMarketNote } from '@/features/market-notes/api/server';
 import {
   JOURNAL_SORTS,
+  JOURNAL_STATUSES,
   JOURNAL_VIEWS,
   TRADE_TYPES,
   type JournalFilters,
   type JournalSort,
+  type JournalStatus,
   type JournalView,
   type TradeType,
 } from '@/features/journal/model/types';
@@ -27,6 +33,7 @@ interface Props {
     tag?: string;
     tradeType?: string;
     sort?: string;
+    status?: string;
     page?: string;
     view?: string;
     month?: string;
@@ -46,6 +53,9 @@ export default async function JournalIndexPage({ searchParams }: Props) {
     tradeType: (TRADE_TYPES as readonly string[]).includes(sp.tradeType ?? '')
       ? (sp.tradeType as TradeType)
       : undefined,
+    status: (JOURNAL_STATUSES as readonly string[]).includes(sp.status ?? '')
+      ? (sp.status as JournalStatus)
+      : undefined,
     sort: (JOURNAL_SORTS as readonly string[]).includes(sp.sort ?? '')
       ? (sp.sort as JournalSort)
       : undefined,
@@ -58,6 +68,11 @@ export default async function JournalIndexPage({ searchParams }: Props) {
   // 서버는 사용자의 시간대를 모르므로 기본 달만 기본 시간대로 정한다. 실제 날짜 배치는 클라이언트가 한다.
   const month = parseMonth(sp.month, new Date(), DEFAULT_TIME_ZONE);
 
+  const [principle, marketNote] = await Promise.all([
+    getPrinciple(session.user.id),
+    getMarketNote(session.user.id),
+  ]);
+
   let result;
   if (view === 'calendar') {
     const { from, to } = gridRange(monthGridDays(month));
@@ -68,7 +83,9 @@ export default async function JournalIndexPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
+      <PrincipleCard content={principle} />
+      <MarketNoteCard note={marketNote} />
       <JournalList result={result} filters={filters} view={view} month={month} />
     </div>
   );
