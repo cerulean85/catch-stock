@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Catch Stock',
-  description: 'S&P 500 RSI 기반 종목 발굴',
+  description: '투자 일지 기록·회고',
 };
 
 export const viewport: Viewport = {

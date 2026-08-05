@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
+import { and, eq, gte, ilike, lt, or, sql, type SQL } from 'drizzle-orm';
 import { db } from '@/shared/db/client';
 import { journals } from '@/shared/db/schema';
 import { effectiveReturn } from '../model/metrics';
@@ -141,6 +141,23 @@ export async function listAllJournals(
     .from(journals)
     .where(and(...buildConditions(userId, filters)))
     .orderBy(sql`${journals.tradedAt} DESC`);
+  return rows.map(toJournal);
+}
+
+/** 기간(`from` 이상 `to` 미만)에 걸린 일지 전체 반환 (캘린더용). */
+export async function listJournalsInRange(
+  userId: string,
+  filters: JournalFilters,
+  from: Date,
+  to: Date,
+): Promise<Journal[]> {
+  const conditions = buildConditions(userId, filters);
+  conditions.push(gte(journals.tradedAt, from), lt(journals.tradedAt, to));
+  const rows = await db
+    .select()
+    .from(journals)
+    .where(and(...conditions))
+    .orderBy(sql`${journals.tradedAt} ASC`);
   return rows.map(toJournal);
 }
 

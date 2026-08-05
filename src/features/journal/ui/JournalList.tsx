@@ -2,23 +2,27 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, LayoutGrid, List, Plus } from 'lucide-react';
+import { BarChart3, CalendarDays, LayoutGrid, List, Plus } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useLocale } from '@/features/locale';
 import type { JournalFilters, JournalListResult, JournalView } from '../model/types';
 import { ExportCsvButton } from './ExportCsvButton';
+import { JournalCalendar } from './JournalCalendar';
 import { JournalCard } from './JournalCard';
 import { JournalListFilters } from './JournalListFilters';
 import { JournalPagination } from './JournalPagination';
 import { JournalRow } from './JournalRow';
 
 interface Props {
+  /** 캘린더 보기에서는 items가 그 달 그리드 전체이고 page/pageCount는 1이다. */
   result: JournalListResult;
   filters: JournalFilters;
   view: JournalView;
+  /** 캘린더 보기에서 표시할 'YYYY-MM'. */
+  month: string;
 }
 
-export function JournalList({ result, filters, view }: Props) {
+export function JournalList({ result, filters, view, month }: Props) {
   const { t } = useLocale();
   const router = useRouter();
   const params = useSearchParams();
@@ -28,6 +32,8 @@ export function JournalList({ result, filters, view }: Props) {
     const sp = new URLSearchParams(params.toString());
     if (next === 'grid') sp.delete('view');
     else sp.set('view', next);
+    sp.delete('page');
+    if (next !== 'calendar') sp.delete('month');
     const qs = sp.toString();
     router.replace(qs ? `/journal?${qs}` : '/journal');
   };
@@ -65,6 +71,17 @@ export function JournalList({ result, filters, view }: Props) {
             >
               <List className="h-4 w-4" />
             </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant={view === 'calendar' ? 'secondary' : 'ghost'}
+              className="h-8 w-8"
+              aria-label={t('viewCalendar')}
+              aria-pressed={view === 'calendar'}
+              onClick={() => setView('calendar')}
+            >
+              <CalendarDays className="h-4 w-4" />
+            </Button>
           </div>
           <ExportCsvButton filters={filters} disabled={total === 0} />
           <Link href="/journal/stats" className={buttonVariants({ variant: 'outline' })}>
@@ -80,7 +97,9 @@ export function JournalList({ result, filters, view }: Props) {
 
       <JournalListFilters initial={filters} />
 
-      {items.length === 0 ? (
+      {view === 'calendar' ? (
+        <JournalCalendar month={month} items={items} />
+      ) : items.length === 0 ? (
         <div className="rounded-md border border-dashed p-12 text-center text-sm text-muted-foreground">
           {t('journalEmpty')}
         </div>

@@ -62,7 +62,7 @@ export type JournalSort = (typeof JOURNAL_SORTS)[number];
 export const DEFAULT_SORT: JournalSort = 'tradedAt';
 export const PAGE_SIZE = 12;
 
-export const JOURNAL_VIEWS = ['grid', 'list'] as const;
+export const JOURNAL_VIEWS = ['grid', 'list', 'calendar'] as const;
 export type JournalView = (typeof JOURNAL_VIEWS)[number];
 
 export interface JournalFilters {
