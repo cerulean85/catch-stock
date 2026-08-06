@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
+import { LinkPending } from '@/shared/ui/LinkPending';
 import { useLocale } from '@/features/locale';
 import { formatDateTime } from '@/shared/lib/locale';
 import type { Journal } from '../model/types';
@@ -42,12 +43,13 @@ export function JournalSidebarList({
               href={`/journal/${j.id}`}
               aria-current={active ? 'page' : undefined}
               className={
-                'rounded-md border px-3 py-2 text-sm transition-colors ' +
+                'relative rounded-md border px-3 py-2 text-sm transition-colors ' +
                 (active
                   ? 'border-primary/50 bg-muted font-medium'
                   : 'border-transparent hover:bg-muted/40')
               }
             >
+              <LinkPending />
               <p className="truncate">
                 {j.status === 'draft' && (
                   <Badge

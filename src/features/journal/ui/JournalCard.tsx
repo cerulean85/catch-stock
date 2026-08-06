@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LinkPending } from '@/shared/ui/LinkPending';
 import { useLocale } from '@/features/locale';
 import { formatDateTime } from '@/shared/lib/locale';
 import type { Journal } from '../model/types';
@@ -20,8 +21,9 @@ export function JournalCard({ journal }: { journal: Journal }) {
   return (
     <Link
       href={`/journal/${journal.id}`}
-      className="block transition-colors hover:bg-muted/30"
+      className="relative block rounded-xl transition-colors hover:bg-muted/30"
     >
+      <LinkPending />
       <Card className="h-full">
         <CardHeader className="pb-3">
           <CardTitle className="line-clamp-2 text-base sm:text-lg">

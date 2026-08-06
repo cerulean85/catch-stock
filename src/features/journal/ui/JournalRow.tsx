@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { LinkPending } from '@/shared/ui/LinkPending';
 import { useLocale } from '@/features/locale';
 import { formatDateTime, formatNumber } from '@/shared/lib/locale';
 import { effectiveReturn } from '../model/metrics';
@@ -22,8 +23,9 @@ export function JournalRow({ journal }: { journal: Journal }) {
   return (
     <Link
       href={`/journal/${journal.id}`}
-      className="flex items-center gap-3 rounded-md border px-4 py-3 transition-colors hover:bg-muted/30"
+      className="relative flex items-center gap-3 rounded-md border px-4 py-3 transition-colors hover:bg-muted/30"
     >
+      <LinkPending />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">
           {journal.status === 'draft' && (
