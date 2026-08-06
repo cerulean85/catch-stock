@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/features/auth/model/auth';
 import { JournalForm, JournalPageHeader } from '@/features/journal';
+import { getTickerTagSuggestions, listLinkCandidates } from '@/features/journal/api/server';
 import { TEMPLATES, isTemplateKey } from '@/features/journal/model/templates';
 
 export const dynamic = 'force-dynamic';
@@ -29,6 +30,11 @@ export default async function NewJournalPage({ searchParams }: Props) {
   const initialTickers = parseCsvParam(sp.tickers).map((ticker) => ticker.toUpperCase());
   const initialTags = parseCsvParam(sp.tags);
 
+  const [suggestions, linkCandidates] = await Promise.all([
+    getTickerTagSuggestions(session.user.id),
+    listLinkCandidates(session.user.id),
+  ]);
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
       <JournalPageHeader mode="new" />
@@ -39,6 +45,9 @@ export default async function NewJournalPage({ searchParams }: Props) {
         initialTags={initialTags}
         imageUploadEnabled={Boolean(process.env.BLOB_READ_WRITE_TOKEN)}
         aiEnabled={Boolean(process.env.ANTHROPIC_API_KEY)}
+        tickerSuggestions={suggestions.tickers}
+        tagSuggestions={suggestions.tags}
+        linkCandidates={linkCandidates}
       />
     </div>
   );

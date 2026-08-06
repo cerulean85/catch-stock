@@ -46,6 +46,15 @@ interface Props {
   initialTags?: string[];
   imageUploadEnabled?: boolean;
   aiEnabled?: boolean;
+  tickerSuggestions?: string[];
+  tagSuggestions?: string[];
+  linkCandidates?: LinkCandidate[];
+}
+
+export interface LinkCandidate {
+  id: string;
+  title: string;
+  tradedAt: Date;
 }
 
 const SENTIMENT_OPTIONS = [1, 2, 3, 4, 5] as const;
@@ -84,6 +93,9 @@ export function JournalForm({
   initialTags = [],
   imageUploadEnabled = false,
   aiEnabled = false,
+  tickerSuggestions,
+  tagSuggestions,
+  linkCandidates = [],
 }: Props) {
   const locale = useLocale();
   const { t } = locale;
@@ -106,6 +118,12 @@ export function JournalForm({
     initial?.sentiment != null ? String(initial.sentiment) : '',
   );
   const [trade, setTrade] = useState<TradeState>(tradeFromJournal(initial));
+  const [reviewAt, setReviewAt] = useState<string>(
+    initial?.reviewAt ? formatDateTimeInput(initial.reviewAt, locale) : '',
+  );
+  const [linkedJournalId, setLinkedJournalId] = useState<string>(
+    initial?.linkedJournalId ?? '',
+  );
   const tradedAt = formatDateTimeInput(initial?.tradedAt ?? new Date(), locale);
 
   const draftValue = useMemo<DraftData>(
@@ -210,6 +228,7 @@ export function JournalForm({
             placeholder="AAPL, 005930"
             transform={(s) => s.toUpperCase()}
             ariaLabel={t('tickerInput')}
+            suggestions={tickerSuggestions}
           />
         </div>
         <div className="space-y-2">
@@ -220,6 +239,7 @@ export function JournalForm({
             placeholder={t('placeholderTags')}
             maxCount={TAG_MAX_COUNT}
             ariaLabel={t('tagInput')}
+            suggestions={tagSuggestions}
           />
         </div>
       </div>
@@ -297,6 +317,42 @@ export function JournalForm({
             </SelectContent>
           </Select>
           <input type="hidden" name="horizon" value={horizon} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="reviewAt">{t('reviewDate')}</Label>
+          <Input
+            key={locale.id}
+            id="reviewAt"
+            name="reviewAt"
+            type="datetime-local"
+            value={reviewAt}
+            onChange={(e) => setReviewAt(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">{t('reviewDateHint')}</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="linkedJournalId">{t('linkTradeLabel')}</Label>
+          <Select
+            value={linkedJournalId || 'none'}
+            onValueChange={(v) => setLinkedJournalId(v == null || v === 'none' ? '' : v)}
+          >
+            <SelectTrigger id="linkedJournalId">
+              <SelectValue placeholder={t('linkNone')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">{t('linkNone')}</SelectItem>
+              {linkCandidates.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <input type="hidden" name="linkedJournalId" value={linkedJournalId} />
+          <p className="text-xs text-muted-foreground">{t('linkTradeHint')}</p>
         </div>
       </div>
 

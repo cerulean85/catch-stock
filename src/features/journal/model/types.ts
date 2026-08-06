@@ -38,6 +38,9 @@ export interface Journal {
   horizon: Horizon | null;
   targetReturn: string | null;
   actualReturn: string | null;
+  linkedJournalId: string | null;
+  reviewAt: Date | null;
+  reviewedAt: Date | null;
   tradedAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -59,6 +62,8 @@ export interface JournalInput {
   horizon: Horizon | null;
   targetReturn: number | null;
   actualReturn: number | null;
+  linkedJournalId: string | null;
+  reviewAt: Date | null;
   tradedAt: Date;
 }
 

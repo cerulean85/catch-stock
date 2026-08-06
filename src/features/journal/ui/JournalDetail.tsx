@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Download, Pencil } from 'lucide-react';
+import { CalendarClock, Copy, Download, Link2, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -15,9 +15,14 @@ import { type Journal } from '../model/types';
 import { horizonLabel, riskCheckLabel, sentimentLabel, tradeTypeLabel } from '../model/labels';
 import { computeTradeMetrics } from '../model/metrics';
 import { journalToMarkdown, slugifyTitle } from '../model/export';
+import { cloneJournalAction, markReviewedAction } from '../api/actions';
 import { DeleteJournalButton } from './DeleteJournalButton';
 import { downloadText } from './download';
 import { MarkdownPreview } from './MarkdownPreview';
+
+function daysBetween(a: Date, b: Date): number {
+  return Math.round(Math.abs(b.getTime() - a.getTime()) / 86_400_000);
+}
 
 function formatNumber(s: string | null, locale: Pick<LocaleSettings, 'locale'>): string | null {
   if (s == null) return null;
@@ -25,7 +30,13 @@ function formatNumber(s: string | null, locale: Pick<LocaleSettings, 'locale'>):
   return Number.isFinite(n) ? formatLocaleNumber(n, locale) : s;
 }
 
-export function JournalDetail({ journal }: { journal: Journal }) {
+export function JournalDetail({
+  journal,
+  linked = null,
+}: {
+  journal: Journal;
+  linked?: Journal | null;
+}) {
   const locale = useLocale();
   const { t } = locale;
   const trade = {
@@ -40,6 +51,9 @@ export function JournalDetail({ journal }: { journal: Journal }) {
   const metrics = computeTradeMetrics(journal);
   const fmt = (n: number | null) =>
     n == null ? null : formatLocaleNumber(Math.round(n * 100) / 100, locale);
+
+  const reviewDue =
+    journal.reviewAt != null && journal.reviewedAt == null && journal.reviewAt <= new Date();
 
   return (
     <article className="flex flex-col gap-6">
@@ -76,6 +90,11 @@ export function JournalDetail({ journal }: { journal: Journal }) {
             >
               <Pencil className="mr-2 h-4 w-4" /> {t('edit')}
             </Link>
+            <form action={cloneJournalAction.bind(null, journal.id)}>
+              <Button type="submit" variant="outline">
+                <Copy className="mr-2 h-4 w-4" /> {t('cloneJournal')}
+              </Button>
+            </form>
             <DeleteJournalButton id={journal.id} />
           </div>
         </div>
@@ -84,9 +103,14 @@ export function JournalDetail({ journal }: { journal: Journal }) {
         </p>
         <div className="flex flex-wrap gap-1.5">
           {journal.tickers.map((ticker) => (
-            <Badge key={ticker} variant="secondary" className="font-mono">
-              {ticker}
-            </Badge>
+            <Link key={ticker} href={`/journal/ticker/${encodeURIComponent(ticker)}`}>
+              <Badge
+                variant="secondary"
+                className="font-mono transition-colors hover:bg-secondary/70"
+              >
+                {ticker}
+              </Badge>
+            </Link>
           ))}
           {journal.tradeTypes.map((type) => (
             <Badge key={type} variant="outline">
@@ -114,6 +138,31 @@ export function JournalDetail({ journal }: { journal: Journal }) {
           </div>
         )}
       </header>
+
+      {(reviewDue || (journal.reviewAt != null && journal.reviewedAt == null)) && (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm">
+          <span className="flex items-center gap-2">
+            <CalendarClock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            {reviewDue ? (
+              <span className="font-medium text-amber-700 dark:text-amber-300">
+                {t('reviewDue')}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">{t('reviewScheduled')}</span>
+            )}
+            <span className="tabular-nums text-muted-foreground">
+              {formatDateTime(journal.reviewAt!, locale)}
+            </span>
+          </span>
+          <form action={markReviewedAction.bind(null, journal.id)}>
+            <Button type="submit" size="sm" variant="outline">
+              {t('reviewMarkDone')}
+            </Button>
+          </form>
+        </section>
+      )}
+
+      {linked && <LinkedTradeCard journal={journal} linked={linked} />}
 
       {hasTrade && (
         <section className="grid grid-cols-2 gap-3 rounded-md border bg-card p-4 sm:grid-cols-3">
@@ -156,6 +205,55 @@ export function JournalDetail({ journal }: { journal: Journal }) {
 
       <MarkdownPreview content={journal.content} />
     </article>
+  );
+}
+
+function LinkedTradeCard({ journal, linked }: { journal: Journal; linked: Journal }) {
+  const locale = useLocale();
+  const { t } = locale;
+  const buy = Number(linked.tradePrice);
+  const sell = Number(journal.sellPrice ?? journal.tradePrice);
+  const returnPct =
+    Number.isFinite(buy) && buy !== 0 && Number.isFinite(sell)
+      ? ((sell - buy) / buy) * 100
+      : null;
+  const holdDays = daysBetween(linked.tradedAt, journal.tradedAt);
+  const returnColor =
+    returnPct == null || returnPct === 0
+      ? ''
+      : returnPct > 0
+        ? 'text-emerald-600 dark:text-emerald-400'
+        : 'text-red-600 dark:text-red-400';
+
+  return (
+    <section className="rounded-md border bg-card p-4">
+      <h2 className="flex items-center gap-2 text-sm font-medium">
+        <Link2 className="h-4 w-4" /> {t('linkedTrade')}
+      </h2>
+      <Link
+        href={`/journal/${linked.id}`}
+        className="mt-2 block truncate text-sm text-primary hover:underline"
+      >
+        {linked.title}
+      </Link>
+      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+        <span className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">{t('holdingPeriod')}</span>
+          <span className="font-medium tabular-nums">
+            {holdDays}
+            {t('daysSuffix')}
+          </span>
+        </span>
+        {returnPct != null && (
+          <span className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">{t('computedReturn')}</span>
+            <span className={`font-medium tabular-nums ${returnColor}`}>
+              {formatLocaleNumber(Math.round(returnPct * 100) / 100, locale)}%
+            </span>
+          </span>
+        )}
+      </div>
+    </section>
   );
 }
 

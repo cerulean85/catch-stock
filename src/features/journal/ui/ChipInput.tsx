@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type KeyboardEvent } from 'react';
+import { useId, useState, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,8 @@ interface Props {
   maxCount?: number;
   transform?: (raw: string) => string;
   ariaLabel?: string;
+  /** 자동완성 후보. 이미 추가된 값은 제외하고 노출. */
+  suggestions?: string[];
 }
 
 export function ChipInput({
@@ -22,9 +24,12 @@ export function ChipInput({
   maxCount,
   transform,
   ariaLabel,
+  suggestions,
 }: Props) {
   const { t } = useLocale();
   const [draft, setDraft] = useState('');
+  const listId = useId();
+  const options = suggestions?.filter((s) => !values.includes(s)).slice(0, 100) ?? [];
 
   const commit = () => {
     const trimmed = draft.trim();
@@ -80,8 +85,16 @@ export function ChipInput({
           onKeyDown={onKey}
           onBlur={commit}
           placeholder={values.length === 0 ? placeholder : undefined}
+          list={options.length > 0 ? listId : undefined}
           className="h-7 flex-1 min-w-[8ch] border-0 bg-transparent shadow-none focus-visible:ring-0"
         />
+        {options.length > 0 && (
+          <datalist id={listId}>
+            {options.map((opt) => (
+              <option key={opt} value={opt} />
+            ))}
+          </datalist>
+        )}
       </div>
       {maxCount != null && (
         <p className="text-xs text-muted-foreground">

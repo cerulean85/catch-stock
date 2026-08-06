@@ -84,6 +84,11 @@ export const journals = pgTable('journal', {
   horizon: text('horizon'),
   targetReturn: numeric('targetReturn'),
   actualReturn: numeric('actualReturn'),
+  // 이 매도 일지가 청산한 원래 매수 일지의 id. 보유기간·실현손익을 두 일지에 걸쳐 계산한다.
+  linkedJournalId: text('linkedJournalId'),
+  // 재점검 예정일. 지났는데 reviewedAt이 비어 있으면 '검토 필요'로 뜬다.
+  reviewAt: timestamp('reviewAt', { mode: 'date' }),
+  reviewedAt: timestamp('reviewedAt', { mode: 'date' }),
   tradedAt: timestamp('tradedAt', { mode: 'date' }).notNull().defaultNow(),
   createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),

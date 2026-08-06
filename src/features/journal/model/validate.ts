@@ -91,6 +91,14 @@ export function parseJournalInput(form: FormData): JournalInput {
     throw new JournalValidationError('작성일시 형식이 올바르지 않습니다.');
   }
 
+  const reviewAtRaw = asTrimmed(form.get('reviewAt'));
+  const reviewAt = reviewAtRaw ? parseDateTimeInput(reviewAtRaw, locale) : null;
+  if (reviewAt && Number.isNaN(reviewAt.getTime())) {
+    throw new JournalValidationError('재점검일 형식이 올바르지 않습니다.');
+  }
+
+  const linkedJournalId = asTrimmed(form.get('linkedJournalId')) || null;
+
   return {
     title,
     content,
@@ -107,6 +115,8 @@ export function parseJournalInput(form: FormData): JournalInput {
     horizon,
     targetReturn: asNumberOrNull(form.get('targetReturn')),
     actualReturn: asNumberOrNull(form.get('actualReturn')),
+    linkedJournalId,
+    reviewAt,
     tradedAt,
   };
 }

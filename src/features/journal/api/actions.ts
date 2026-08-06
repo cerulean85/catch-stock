@@ -5,12 +5,14 @@ import { redirect } from 'next/navigation';
 import { put } from '@vercel/blob';
 import { auth } from '@/features/auth/model/auth';
 import { journalsToCsv } from '../model/export';
-import type { JournalFilters } from '../model/types';
+import type { JournalFilters, JournalInput } from '../model/types';
 import { JournalValidationError, parseJournalInput } from '../model/validate';
 import {
   createJournal as dbCreate,
   deleteJournal as dbDelete,
+  getJournal,
   listAllJournals,
+  markJournalReviewed,
   updateJournal as dbUpdate,
 } from './server';
 
@@ -79,6 +81,51 @@ export async function deleteJournalAction(id: string): Promise<void> {
   await dbDelete(userId, id);
   revalidatePath('/journal');
   redirect('/journal');
+}
+
+const toNum = (s: string | null): number | null => {
+  if (s == null) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** 기존 일지를 초안으로 복제하고 편집 화면으로 이동. */
+export async function cloneJournalAction(id: string): Promise<void> {
+  const userId = await requireUserId();
+  const src = await getJournal(userId, id);
+  if (!src) redirect('/journal');
+  const input: JournalInput = {
+    title: `${src.title} (복사본)`,
+    content: src.content,
+    status: 'draft',
+    tickers: src.tickers,
+    tags: src.tags,
+    tradeTypes: src.tradeTypes,
+    riskChecks: src.riskChecks,
+    tradeQty: toNum(src.tradeQty),
+    tradePrice: toNum(src.tradePrice),
+    sellPrice: toNum(src.sellPrice),
+    tradeFee: toNum(src.tradeFee),
+    sentiment: src.sentiment,
+    horizon: src.horizon,
+    targetReturn: toNum(src.targetReturn),
+    actualReturn: toNum(src.actualReturn),
+    // 복제본은 새 매매이므로 연결·재점검·수익률 결과는 비운다.
+    linkedJournalId: null,
+    reviewAt: null,
+    tradedAt: new Date(),
+  };
+  const created = await dbCreate(userId, input);
+  revalidatePath('/journal');
+  redirect(`/journal/${created.id}/edit`);
+}
+
+/** 일지를 '검토 완료'로 표시. */
+export async function markReviewedAction(id: string): Promise<void> {
+  const userId = await requireUserId();
+  await markJournalReviewed(userId, id, new Date());
+  revalidatePath('/journal');
+  revalidatePath(`/journal/${id}`);
 }
 
 /** 현재 필터에 맞는 일지 전체를 CSV 문자열로 반환. 다운로드는 클라이언트에서 처리. */

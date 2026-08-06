@@ -12,6 +12,8 @@ import { JournalCard } from './JournalCard';
 import { JournalListFilters } from './JournalListFilters';
 import { JournalPagination } from './JournalPagination';
 import { JournalRow } from './JournalRow';
+import { JournalShortcuts } from './JournalShortcuts';
+import { SavedViews } from './SavedViews';
 
 interface Props {
   /** 캘린더 보기에서는 items가 그 달 그리드 전체이고 page/pageCount는 1이다. */
@@ -40,6 +42,7 @@ export function JournalList({ result, filters, view, month }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
+      <JournalShortcuts />
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('journalTitle')}</h1>
@@ -96,6 +99,8 @@ export function JournalList({ result, filters, view, month }: Props) {
       </header>
 
       <JournalListFilters initial={filters} />
+
+      <SavedViews />
 
       {view === 'calendar' ? (
         <JournalCalendar month={month} items={items} />

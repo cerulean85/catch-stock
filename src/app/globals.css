@@ -128,4 +128,13 @@
   html {
     @apply font-sans;
   }
+  /* 클릭 가능한 요소는 손가락 커서로 통일 (Tailwind v4는 기본값이 아님) */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  a[href],
+  label[for],
+  summary,
+  select:not(:disabled) {
+    cursor: pointer;
+  }
 }

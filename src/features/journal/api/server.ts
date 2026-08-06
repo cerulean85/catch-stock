@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, eq, gte, ilike, lt, or, sql, type SQL } from 'drizzle-orm';
+import { and, eq, gte, ilike, isNull, lt, lte, ne, or, sql, type SQL } from 'drizzle-orm';
 import { db } from '@/shared/db/client';
 import { journals } from '@/shared/db/schema';
 import { effectiveReturn } from '../model/metrics';
@@ -40,6 +40,9 @@ function toJournal(row: DbRow): Journal {
     horizon: row.horizon as Journal['horizon'],
     targetReturn: row.targetReturn,
     actualReturn: row.actualReturn,
+    linkedJournalId: row.linkedJournalId,
+    reviewAt: row.reviewAt,
+    reviewedAt: row.reviewedAt,
     tradedAt: row.tradedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -65,6 +68,8 @@ function toInsertValues(userId: string, input: JournalInput) {
     horizon: input.horizon,
     targetReturn: s(input.targetReturn),
     actualReturn: s(input.actualReturn),
+    linkedJournalId: input.linkedJournalId,
+    reviewAt: input.reviewAt,
     tradedAt: input.tradedAt,
   };
 }
@@ -198,9 +203,13 @@ export async function updateJournal(
     return { ok: false, reason: 'conflict' };
   }
   const values = { ...toInsertValues(userId, input), updatedAt: new Date() };
+  // 재점검일이 새로 바뀌면 이전 '검토 완료' 표시는 무효로 본다.
+  const reviewChanged =
+    input.reviewAt?.getTime() !== (existing.reviewAt?.getTime() ?? undefined);
+  const setValues = reviewChanged ? { ...values, reviewedAt: null } : values;
   const updated = await db
     .update(journals)
-    .set(values)
+    .set(setValues)
     .where(and(eq(journals.id, id), eq(journals.userId, userId)))
     .returning();
   return updated[0]
@@ -214,6 +223,67 @@ export async function deleteJournal(userId: string, id: string): Promise<boolean
     .where(and(eq(journals.id, id), eq(journals.userId, userId)))
     .returning({ id: journals.id });
   return result.length > 0;
+}
+
+/** 자동완성용: 사용자가 이전에 쓴 티커·태그를 빈도 높은 순으로 반환. */
+export async function getTickerTagSuggestions(
+  userId: string,
+): Promise<{ tickers: string[]; tags: string[] }> {
+  const all = await listAllJournals(userId, {});
+  const ranked = (pick: (j: Journal) => string[]): string[] => {
+    const counts = new Map<string, number>();
+    for (const j of all) for (const v of pick(j)) counts.set(v, (counts.get(v) ?? 0) + 1);
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([v]) => v);
+  };
+  return { tickers: ranked((j) => j.tickers), tags: ranked((j) => j.tags) };
+}
+
+/** 재점검일이 지났는데 아직 검토 완료 표시가 안 된 일지. */
+export async function listDueReviews(userId: string, now: Date): Promise<Journal[]> {
+  const rows = await db
+    .select()
+    .from(journals)
+    .where(
+      and(
+        eq(journals.userId, userId),
+        isNull(journals.reviewedAt),
+        lte(journals.reviewAt, now),
+      ),
+    )
+    .orderBy(sql`${journals.reviewAt} ASC`);
+  return rows.map(toJournal);
+}
+
+/** 일지를 '검토 완료'로 표시. */
+export async function markJournalReviewed(
+  userId: string,
+  id: string,
+  reviewedAt: Date,
+): Promise<boolean> {
+  const res = await db
+    .update(journals)
+    .set({ reviewedAt })
+    .where(and(eq(journals.id, id), eq(journals.userId, userId)))
+    .returning({ id: journals.id });
+  return res.length > 0;
+}
+
+/** 매도 일지를 연결할 후보(발행된 일지, 자기 자신 제외). 최신순. */
+export async function listLinkCandidates(
+  userId: string,
+  excludeId?: string,
+): Promise<Journal[]> {
+  const conds: SQL[] = [eq(journals.userId, userId), eq(journals.status, 'published')];
+  if (excludeId) conds.push(ne(journals.id, excludeId));
+  const rows = await db
+    .select()
+    .from(journals)
+    .where(and(...conds))
+    .orderBy(sql`${journals.tradedAt} DESC`)
+    .limit(100);
+  return rows.map(toJournal);
 }
 
 function avg(values: number[]): number | null {

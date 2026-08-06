@@ -1,7 +1,12 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/features/auth/model/auth';
-import { listJournals, listJournalsInRange } from '@/features/journal/api/server';
+import {
+  listDueReviews,
+  listJournals,
+  listJournalsInRange,
+} from '@/features/journal/api/server';
 import { JournalList } from '@/features/journal';
+import { ReviewReminders } from '@/features/journal/ui/ReviewReminders';
 import { gridRange, monthGridDays, parseMonth } from '@/features/journal/model/calendar';
 import { PrincipleCard } from '@/features/principles';
 import { getPrinciple } from '@/features/principles/api/server';
@@ -70,10 +75,11 @@ export default async function JournalIndexPage({ searchParams }: Props) {
   // 서버는 사용자의 시간대를 모르므로 기본 달만 기본 시간대로 정한다. 실제 날짜 배치는 클라이언트가 한다.
   const month = parseMonth(sp.month, new Date(), DEFAULT_TIME_ZONE);
 
-  const [principle, marketNote, swingNote] = await Promise.all([
+  const [principle, marketNote, swingNote, dueReviews] = await Promise.all([
     getPrinciple(session.user.id),
     getMarketNote(session.user.id),
     getSwingNote(session.user.id),
+    listDueReviews(session.user.id, new Date()),
   ]);
 
   let result;
@@ -86,11 +92,20 @@ export default async function JournalIndexPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-      <PrincipleCard content={principle} />
-      <MarketNoteCard note={marketNote} />
-      <SwingNoteCard content={swingNote} />
-      <JournalList result={result} filters={filters} view={view} month={month} />
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:h-[calc(100vh-3.5rem)] lg:py-6">
+      <div className="grid grid-cols-1 gap-6 lg:h-full lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-8 lg:overflow-hidden">
+        {/* 좌측: 메모 사이드바 — muted 패널로 우측과 구분, 독립 스크롤 */}
+        <aside className="flex flex-col gap-5 rounded-xl border bg-muted/40 p-4 lg:min-h-0 lg:overflow-y-auto lg:p-5">
+          <PrincipleCard content={principle} />
+          <MarketNoteCard note={marketNote} />
+          <SwingNoteCard content={swingNote} />
+        </aside>
+        {/* 우측: 투자 일지 — 기본 배경, 독립 스크롤 */}
+        <section className="flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:pl-1 lg:pr-2">
+          <ReviewReminders items={dueReviews} />
+          <JournalList result={result} filters={filters} view={view} month={month} />
+        </section>
+      </div>
     </div>
   );
 }
