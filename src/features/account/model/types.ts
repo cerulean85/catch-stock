@@ -1,5 +1,6 @@
 /** 국내/해외 공통으로 다루는 보유 종목 1건. */
 export interface Holding {
+  scope: 'domestic' | 'overseas';
   code: string;
   name: string;
   quantity: number;
@@ -20,17 +21,24 @@ export interface Holding {
 
 export interface HoldingGroup {
   holdings: Holding[];
-  /** 거래 통화 기준 합계. 통화가 섞이면 원화 환산액이 있는 해외는 evalAmountKrw로 따로 본다. */
+  /** 거래 통화 기준 합계. 해외는 원화 환산 합계를 따로 들고 있다. */
   totalEval: number;
   totalPnl: number;
   totalEvalKrw: number | null;
   currency: string;
 }
 
+/** 수집 서버(trade/)의 마지막 동기화 상태. 아직 한 번도 안 돌았으면 null. */
+export interface SyncStatus {
+  status: 'ok' | 'error';
+  message: string | null;
+  /** 수집 서버의 공인 IP. 키움에 등록해야 하는 값. */
+  publicIp: string | null;
+  syncedAt: Date;
+}
+
 export interface AccountBalance {
   domestic: HoldingGroup | null;
   overseas: HoldingGroup | null;
-  /** 조회 실패한 구간의 사유. 한쪽만 실패해도 다른 쪽은 그대로 보여준다. */
-  errors: { scope: 'domestic' | 'overseas'; message: string }[];
-  fetchedAt: Date;
+  sync: SyncStatus | null;
 }

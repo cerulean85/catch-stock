@@ -1,45 +1,60 @@
 import 'server-only';
-import {
-  apiErrorMessage,
-  parseDomesticHoldings,
-  parseOverseasHoldings,
-  toGroup,
-} from '../model/parse';
-import type { AccountBalance, HoldingGroup } from '../model/types';
-import { fetchDomesticBalance, fetchOverseasBalance, isConfigured } from './kiwoom';
+import { asc, eq } from 'drizzle-orm';
+import { db } from '@/shared/db/client';
+import { accountHoldings, accountSyncs } from '@/shared/db/schema';
+import { toGroup, toNumber } from '../model/group';
+import type { AccountBalance, Holding, SyncStatus } from '../model/types';
 
-export { isConfigured };
+const SYNC_ID = 'kiwoom';
 
-async function load(
-  fetcher: () => Promise<Record<string, unknown>>,
-  parse: (body: Record<string, unknown>) => ReturnType<typeof parseDomesticHoldings>,
-  currency: string,
-): Promise<{ group: HoldingGroup | null; error: string | null }> {
-  try {
-    const body = await fetcher();
-    const message = apiErrorMessage(body);
-    if (message) return { group: null, error: message };
-    return { group: toGroup(parse(body), currency), error: null };
-  } catch (e) {
-    return { group: null, error: e instanceof Error ? e.message : '조회 중 오류가 발생했습니다.' };
-  }
+type HoldingRow = typeof accountHoldings.$inferSelect;
+
+function toHolding(row: HoldingRow): Holding {
+  return {
+    scope: row.scope === 'overseas' ? 'overseas' : 'domestic',
+    code: row.code,
+    name: row.name,
+    quantity: toNumber(row.quantity),
+    avgPrice: toNumber(row.avgPrice),
+    currentPrice: toNumber(row.currentPrice),
+    evalAmount: toNumber(row.evalAmount),
+    pnlAmount: toNumber(row.pnlAmount),
+    pnlRate: toNumber(row.pnlRate),
+    currency: row.currency,
+    evalAmountKrw: row.evalAmountKrw == null ? null : toNumber(row.evalAmountKrw),
+  };
 }
 
-/** 국내·해외 잔고를 함께 조회. 한쪽이 실패해도 다른 쪽은 그대로 반환한다. */
+/**
+ * 잔고는 수집 서버(trade/sync.py)가 적재한 스냅샷을 읽기만 한다.
+ * 키움 API는 호출 IP 등록이 필요해 웹에서 직접 부르지 않는다.
+ */
 export async function getAccountBalance(): Promise<AccountBalance> {
-  const [domestic, overseas] = await Promise.all([
-    load(fetchDomesticBalance, parseDomesticHoldings, 'KRW'),
-    load(fetchOverseasBalance, parseOverseasHoldings, 'USD'),
+  const [rows, syncRows] = await Promise.all([
+    db.select().from(accountHoldings).orderBy(asc(accountHoldings.scope), asc(accountHoldings.code)),
+    db.select().from(accountSyncs).where(eq(accountSyncs.id, SYNC_ID)).limit(1),
   ]);
 
-  const errors: AccountBalance['errors'] = [];
-  if (domestic.error) errors.push({ scope: 'domestic', message: domestic.error });
-  if (overseas.error) errors.push({ scope: 'overseas', message: overseas.error });
+  const holdings = rows.map(toHolding);
+  const syncRow = syncRows[0];
+  const sync: SyncStatus | null = syncRow
+    ? {
+        status: syncRow.status === 'error' ? 'error' : 'ok',
+        message: syncRow.message,
+        publicIp: syncRow.publicIp,
+        syncedAt: syncRow.syncedAt,
+      }
+    : null;
 
   return {
-    domestic: domestic.group,
-    overseas: overseas.group,
-    errors,
-    fetchedAt: new Date(),
+    domestic: toGroup(
+      holdings.filter((h) => h.scope === 'domestic'),
+      'KRW',
+    ),
+    overseas: toGroup(
+      holdings.filter((h) => h.scope === 'overseas'),
+      'USD',
+    ),
+    sync,
   };
 }

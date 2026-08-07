@@ -123,6 +123,38 @@ export const swingNotes = pgTable('swingNote', {
   updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
 });
 
+// 키움 계좌 잔고 스냅샷. 고정 IP를 가진 수집 서버(trade/)가 주기적으로 채우고,
+// 웹은 읽기만 한다. 계좌가 하나뿐이라 유저별로 나누지 않는다.
+export const accountHoldings = pgTable(
+  'accountHolding',
+  {
+    scope: text('scope').notNull(), // 'domestic' | 'overseas'
+    code: text('code').notNull(),
+    name: text('name').notNull().default(''),
+    quantity: numeric('quantity').notNull().default('0'),
+    avgPrice: numeric('avgPrice').notNull().default('0'),
+    currentPrice: numeric('currentPrice').notNull().default('0'),
+    evalAmount: numeric('evalAmount').notNull().default('0'),
+    pnlAmount: numeric('pnlAmount').notNull().default('0'),
+    pnlRate: numeric('pnlRate').notNull().default('0'),
+    currency: text('currency').notNull().default('KRW'),
+    evalAmountKrw: numeric('evalAmountKrw'),
+    updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (holding) => ({
+    compoundKey: primaryKey({ columns: [holding.scope, holding.code] }),
+  }),
+);
+
+// 수집 서버의 마지막 동기화 상태. publicIp는 키움에 등록해야 할 IP를 확인하는 용도.
+export const accountSyncs = pgTable('accountSync', {
+  id: text('id').primaryKey(), // 'kiwoom'
+  status: text('status').notNull().default('ok'), // 'ok' | 'error'
+  message: text('message'),
+  publicIp: text('publicIp'),
+  syncedAt: timestamp('syncedAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
 export const watchlistItems = pgTable(
   'watchlistItem',
   {

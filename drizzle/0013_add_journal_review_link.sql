@@ -1,3 +1,3 @@
-ALTER TABLE "journal" ADD COLUMN "linkedJournalId" text;--> statement-breakpoint
-ALTER TABLE "journal" ADD COLUMN "reviewAt" timestamp;--> statement-breakpoint
-ALTER TABLE "journal" ADD COLUMN "reviewedAt" timestamp;
+ALTER TABLE "journal" ADD COLUMN IF NOT EXISTS "linkedJournalId" text;--> statement-breakpoint
+ALTER TABLE "journal" ADD COLUMN IF NOT EXISTS "reviewAt" timestamp;--> statement-breakpoint
+ALTER TABLE "journal" ADD COLUMN IF NOT EXISTS "reviewedAt" timestamp;
