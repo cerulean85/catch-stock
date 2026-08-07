@@ -30,6 +30,9 @@ export async function Header() {
           <Link href="/journal" className="text-muted-foreground hover:text-foreground">
             JOURNAL
           </Link>
+          <Link href="/account" className="text-muted-foreground hover:text-foreground">
+            ACCOUNT
+          </Link>
         </nav>
         <div className="hidden items-center gap-1.5 sm:flex">
           <LocaleToggle />

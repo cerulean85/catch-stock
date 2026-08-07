@@ -128,8 +128,8 @@ if __name__ == '__main__':
 	# 1. 토큰 발급 요청 데이터
 	params = {
 		'grant_type': 'client_credentials',  # grant_type
-		'appkey': 'tuwnVAKg7pAU7Gn8-mzkR3wAYD-Zc4Bg_6hziHYHTlc',  # 앱키
-		'secretkey': 'au1qFCbMIYoDsjcXbmIox0qP9pwfZ8-KSI8Yor1vu9M',  # 시크릿키
+		'appkey': '...',  # 앱키
+		'secretkey': '...',  # 시크릿키
 	}
 
 	# 2. 토큰 발급 (실전/모의 여부에 맞춰 host 설정)
@@ -146,6 +146,7 @@ if __name__ == '__main__':
 		token_data = token_response.json()
 		access_token = token_data.get('token') or token_data.get('access_token')
 		print('액세스 토큰 발급 성공!')
+		print(access_token)
 		
 		if access_token:
 			# 3-1. 국내 주식 보유 종목 조회 API 호출 (kt00004)
