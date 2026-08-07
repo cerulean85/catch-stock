@@ -13,6 +13,7 @@ import {
   getJournal,
   listAllJournals,
   markJournalReviewed,
+  setJournalPinned,
   updateJournal as dbUpdate,
 } from './server';
 
@@ -124,6 +125,14 @@ export async function cloneJournalAction(id: string): Promise<void> {
 export async function markReviewedAction(id: string): Promise<void> {
   const userId = await requireUserId();
   await markJournalReviewed(userId, id, new Date());
+  revalidatePath('/journal');
+  revalidatePath(`/journal/${id}`);
+}
+
+/** 일지를 목록 상단에 고정하거나 해제한다. */
+export async function setJournalPinnedAction(id: string, pinned: boolean): Promise<void> {
+  const userId = await requireUserId();
+  await setJournalPinned(userId, id, pinned);
   revalidatePath('/journal');
   revalidatePath(`/journal/${id}`);
 }

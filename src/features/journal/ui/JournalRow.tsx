@@ -8,6 +8,7 @@ import { formatDateTime, formatNumber } from '@/shared/lib/locale';
 import { effectiveReturn } from '../model/metrics';
 import { tradeTypeLabel } from '../model/labels';
 import type { Journal } from '../model/types';
+import { JournalPinButton } from './JournalPinButton';
 
 export function JournalRow({ journal }: { journal: Journal }) {
   const locale = useLocale();
@@ -21,10 +22,13 @@ export function JournalRow({ journal }: { journal: Journal }) {
         : 'text-red-600 dark:text-red-400';
 
   return (
-    <Link
-      href={`/journal/${journal.id}`}
-      className="relative flex items-center gap-3 rounded-md border px-4 py-3 transition-colors hover:bg-muted/30"
-    >
+    <div className="relative">
+      <Link
+        href={`/journal/${journal.id}`}
+        className={`relative flex items-center gap-3 rounded-md border py-3 pr-12 pl-4 transition-colors hover:bg-muted/30 ${
+          journal.pinned ? 'border-primary/40' : ''
+        }`}
+      >
       <LinkPending />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">
@@ -57,6 +61,12 @@ export function JournalRow({ journal }: { journal: Journal }) {
           {formatNumber(Math.round(ret * 100) / 100, locale)}%
         </span>
       )}
-    </Link>
+      </Link>
+      <JournalPinButton
+        id={journal.id}
+        pinned={journal.pinned}
+        className="absolute top-1/2 right-3 -translate-y-1/2"
+      />
+    </div>
   );
 }

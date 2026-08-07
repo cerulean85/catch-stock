@@ -1,5 +1,7 @@
 import {
+  boolean,
   integer,
+  jsonb,
   numeric,
   pgTable,
   primaryKey,
@@ -72,6 +74,8 @@ export const journals = pgTable('journal', {
   content: text('content').notNull(),
   // 'draft'(임시저장) | 'published'. 기존 행은 모두 published로 본다.
   status: text('status').notNull().default('published'),
+  // 고정한 일지는 정렬과 무관하게 목록 맨 위에 올린다.
+  pinned: boolean('pinned').notNull().default(false),
   tickers: text('tickers').array().notNull().default([]),
   tags: text('tags').array().notNull().default([]),
   tradeTypes: text('tradeTypes').array().notNull().default([]),
@@ -123,6 +127,42 @@ export const swingNotes = pgTable('swingNote', {
   updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
 });
 
+// 유저별 종목 리스크 평가 기준 1건. 비어 있으면 기본 초안(DEFAULT_RISK_CRITERIA)을 쓴다.
+export const riskCriteria = pgTable('riskCriteria', {
+  userId: text('userId')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull().default(''),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
+// 종목별 리스크 평가 결과 1건. 평가할 때마다 쌓아서 과거 이력을 그대로 남긴다.
+export const riskAssessments = pgTable('riskAssessment', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('userId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  scope: text('scope').notNull(),
+  code: text('code').notNull(),
+  // 평가 당시의 종목명. 나중에 잔고에서 빠져도 이력이 읽히게 남겨둔다.
+  name: text('name').notNull().default(''),
+  level: text('level').notNull(),
+  summary: text('summary').notNull().default(''),
+  // 평가 기준을 고치면 항목 구성도 바뀌므로 결과를 통째로 보관한다.
+  sections: jsonb('sections')
+    .$type<{ title: string; level: string; body: string }[]>()
+    .notNull()
+    .default([]),
+  watchlist: text('watchlist').array().notNull().default([]),
+  sources: jsonb('sources').$type<{ title: string; uri: string }[]>().notNull().default([]),
+  // 웹 검색을 실제로 돌렸는지. 안 돌린 평가는 화면에서 따로 표시한다.
+  searched: boolean('searched').notNull().default(false),
+  model: text('model').notNull().default(''),
+  createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
 // 키움 계좌 잔고 스냅샷. 고정 IP를 가진 수집 서버(trade/)가 주기적으로 채우고,
 // 웹은 읽기만 한다. 계좌가 하나뿐이라 유저별로 나누지 않는다.
 export const accountHoldings = pgTable(
@@ -143,6 +183,30 @@ export const accountHoldings = pgTable(
   },
   (holding) => ({
     compoundKey: primaryKey({ columns: [holding.scope, holding.code] }),
+  }),
+);
+
+// 체결 내역. 수집 서버가 kt00007(국내)·ust21100(해외)에서 받아 쌓는다.
+// 같은 체결이 여러 번 수집돼도 (scope, tradedOn, dealId)로 덮어쓴다.
+export const accountTrades = pgTable(
+  'accountTrade',
+  {
+    scope: text('scope').notNull(), // 'domestic' | 'overseas'
+    tradedOn: text('tradedOn').notNull(), // 'YYYY-MM-DD'
+    dealId: text('dealId').notNull(), // 국내 주문번호 / 해외 거래번호
+    tradedTime: text('tradedTime'), // 'HH:mm:ss', 해외는 없음
+    code: text('code').notNull(),
+    name: text('name').notNull().default(''),
+    side: text('side').notNull().default('other'), // 'buy' | 'sell' | 'other'
+    sideLabel: text('sideLabel'), // 키움 원문(주문구분/적요명). 참고용
+    quantity: numeric('quantity').notNull().default('0'),
+    price: numeric('price').notNull().default('0'),
+    amount: numeric('amount').notNull().default('0'),
+    fee: numeric('fee'),
+    currency: text('currency').notNull().default('KRW'),
+  },
+  (trade) => ({
+    compoundKey: primaryKey({ columns: [trade.scope, trade.tradedOn, trade.dealId] }),
   }),
 );
 

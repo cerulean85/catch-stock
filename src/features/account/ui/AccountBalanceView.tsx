@@ -1,8 +1,8 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { RefreshCw } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -15,13 +15,28 @@ import {
 import { useLocale } from '@/features/locale';
 import { formatDateTime, formatDecimal } from '@/shared/lib/locale';
 import type { AccountBalance, Holding, HoldingGroup, SyncStatus } from '../model/types';
+import {
+  nextSort,
+  sortHoldings,
+  type HoldingSort,
+  type HoldingSortKey,
+  type SortDirection,
+} from '../model/sort';
 import { StockLogo } from './StockLogo';
+import { TickerDetailPanel } from './TickerDetailPanel';
 
-export function AccountBalanceView({ balance }: { balance: AccountBalance }) {
+export function AccountBalanceView({
+  balance,
+  riskCriteria,
+}: {
+  balance: AccountBalance;
+  riskCriteria: string;
+}) {
   const locale = useLocale();
   const { t } = locale;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [selected, setSelected] = useState<Holding | null>(null);
   const { sync } = balance;
   const isEmpty = !balance.domestic && !balance.overseas;
 
@@ -62,10 +77,34 @@ export function AccountBalanceView({ balance }: { balance: AccountBalance }) {
               {t('noHoldings')}
             </p>
           ) : (
-            <>
-              <HoldingSection title={t('domesticStocks')} group={balance.domestic} />
-              <HoldingSection title={t('overseasStocks')} group={balance.overseas} />
-            </>
+            <div
+              className={
+                selected ? 'grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]' : undefined
+              }
+            >
+              <div className="flex min-w-0 flex-col gap-6">
+                <HoldingSection
+                  title={t('domesticStocks')}
+                  group={balance.domestic}
+                  selectedCode={selected?.code ?? null}
+                  onSelect={setSelected}
+                />
+                <HoldingSection
+                  title={t('overseasStocks')}
+                  group={balance.overseas}
+                  selectedCode={selected?.code ?? null}
+                  onSelect={setSelected}
+                />
+              </div>
+              {selected && (
+                <TickerDetailPanel
+                  key={`${selected.scope}-${selected.code}`}
+                  holding={selected}
+                  riskCriteria={riskCriteria}
+                  onClose={() => setSelected(null)}
+                />
+              )}
+            </div>
           )}
         </>
       )}
@@ -98,11 +137,34 @@ function SyncFooter({ sync }: { sync: SyncStatus | null }) {
   );
 }
 
-function HoldingSection({ title, group }: { title: string; group: HoldingGroup | null }) {
+const COLUMNS: { key: HoldingSortKey; label: string; align: 'left' | 'right' }[] = [
+  { key: 'name', label: 'ticker', align: 'left' },
+  { key: 'quantity', label: 'tradeQty', align: 'right' },
+  { key: 'avgPrice', label: 'avgPrice', align: 'right' },
+  { key: 'currentPrice', label: 'currentPrice', align: 'right' },
+  { key: 'evalAmount', label: 'evalAmount', align: 'right' },
+  { key: 'pnlAmount', label: 'pnlAmount', align: 'right' },
+];
+
+function HoldingSection({
+  title,
+  group,
+  selectedCode,
+  onSelect,
+}: {
+  title: string;
+  group: HoldingGroup | null;
+  selectedCode: string | null;
+  onSelect: (holding: Holding) => void;
+}) {
   const locale = useLocale();
   const { t } = locale;
+  // 국내·해외 표는 각자 정렬 상태를 갖는다.
+  const [sort, setSort] = useState<HoldingSort | null>(null);
 
   if (!group) return null;
+
+  const holdings = sortHoldings(group.holdings, sort, locale.locale);
 
   const money = (value: number, currency: string) =>
     formatDecimal(value, locale, {
@@ -132,17 +194,25 @@ function HoldingSection({ title, group }: { title: string; group: HoldingGroup |
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('ticker')}</TableHead>
-              <TableHead className="text-right">{t('tradeQty')}</TableHead>
-              <TableHead className="text-right">{t('avgPrice')}</TableHead>
-              <TableHead className="text-right">{t('currentPrice')}</TableHead>
-              <TableHead className="text-right">{t('evalAmount')}</TableHead>
-              <TableHead className="text-right">{t('pnlAmount')}</TableHead>
+              {COLUMNS.map((column) => (
+                <SortableHead
+                  key={column.key}
+                  label={t(column.label)}
+                  align={column.align}
+                  active={sort?.key === column.key ? sort.direction : null}
+                  onClick={() => setSort((current) => nextSort(current, column.key))}
+                />
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {group.holdings.map((holding) => (
-              <HoldingRow key={`${holding.scope}-${holding.code}`} holding={holding} />
+            {holdings.map((holding) => (
+              <HoldingRow
+                key={`${holding.scope}-${holding.code}`}
+                holding={holding}
+                selected={holding.code === selectedCode}
+                onSelect={() => onSelect(holding)}
+              />
             ))}
           </TableBody>
         </Table>
@@ -151,7 +221,47 @@ function HoldingSection({ title, group }: { title: string; group: HoldingGroup |
   );
 }
 
-function HoldingRow({ holding }: { holding: Holding }) {
+function SortableHead({
+  label,
+  align,
+  active,
+  onClick,
+}: {
+  label: string;
+  align: 'left' | 'right';
+  active: SortDirection | null;
+  onClick: () => void;
+}) {
+  const Icon = active === 'asc' ? ArrowUp : active === 'desc' ? ArrowDown : ArrowUpDown;
+
+  return (
+    <TableHead
+      aria-sort={active === 'asc' ? 'ascending' : active === 'desc' ? 'descending' : 'none'}
+      className={align === 'right' ? 'text-right' : undefined}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex cursor-pointer items-center gap-1 hover:text-foreground ${
+          active ? 'text-foreground' : ''
+        }`}
+      >
+        {label}
+        <Icon className={`h-3.5 w-3.5 ${active ? '' : 'opacity-40'}`} />
+      </button>
+    </TableHead>
+  );
+}
+
+function HoldingRow({
+  holding,
+  selected,
+  onSelect,
+}: {
+  holding: Holding;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const locale = useLocale();
   const digits = holding.currency === 'KRW' ? 0 : 2;
   const money = (value: number) =>
@@ -161,7 +271,11 @@ function HoldingRow({ holding }: { holding: Holding }) {
     });
 
   return (
-    <TableRow>
+    <TableRow
+      onClick={onSelect}
+      aria-selected={selected}
+      className={`cursor-pointer ${selected ? 'bg-muted' : ''}`}
+    >
       <TableCell>
         <span className="flex items-center gap-2">
           <StockLogo code={holding.code} name={holding.name} />

@@ -28,6 +28,7 @@ function toJournal(row: DbRow): Journal {
     title: row.title,
     content: row.content,
     status: row.status as Journal['status'],
+    pinned: row.pinned,
     tickers: row.tickers ?? [],
     tags: row.tags ?? [],
     tradeTypes: (row.tradeTypes ?? []) as Journal['tradeTypes'],
@@ -101,16 +102,19 @@ function buildConditions(userId: string, filters: JournalFilters): SQL[] {
 const returnSqlExpr = sql`COALESCE(CASE WHEN ${journals.sellPrice} IS NOT NULL AND ${journals.tradePrice} IS NOT NULL AND ${journals.tradePrice} <> 0 THEN (${journals.sellPrice} - ${journals.tradePrice}) / ${journals.tradePrice} * 100 ELSE NULL END, ${journals.actualReturn})`;
 
 function orderBySql(sort: JournalSort): SQL[] {
+  // 고정한 일지는 어떤 정렬을 고르든, 몇 페이지를 보든 맨 위에 온다.
+  const pinnedFirst = sql`${journals.pinned} DESC`;
+
   if (sort === 'oldest') {
-    return [sql`${journals.tradedAt} ASC`];
+    return [pinnedFirst, sql`${journals.tradedAt} ASC`];
   }
   if (sort === 'sentiment') {
-    return [sql`${journals.sentiment} DESC NULLS LAST`, sql`${journals.tradedAt} DESC`];
+    return [pinnedFirst, sql`${journals.sentiment} DESC NULLS LAST`, sql`${journals.tradedAt} DESC`];
   }
   if (sort === 'return') {
-    return [sql`${returnSqlExpr} DESC NULLS LAST`, sql`${journals.tradedAt} DESC`];
+    return [pinnedFirst, sql`${returnSqlExpr} DESC NULLS LAST`, sql`${journals.tradedAt} DESC`];
   }
-  return [sql`${journals.tradedAt} DESC`];
+  return [pinnedFirst, sql`${journals.tradedAt} DESC`];
 }
 
 export async function listJournals(
@@ -392,4 +396,18 @@ export async function getJournalStats(userId: string): Promise<JournalStats> {
     best,
     worst,
   };
+}
+
+/** 일지 고정 여부를 바꾼다. 없는 일지거나 남의 일지면 false. */
+export async function setJournalPinned(
+  userId: string,
+  id: string,
+  pinned: boolean,
+): Promise<boolean> {
+  const res = await db
+    .update(journals)
+    .set({ pinned })
+    .where(and(eq(journals.id, id), eq(journals.userId, userId)))
+    .returning({ id: journals.id });
+  return res.length > 0;
 }

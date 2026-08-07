@@ -2,7 +2,17 @@
 
 import unittest
 
-from parse import api_error_message, parse_domestic, parse_overseas, to_number
+from parse import (
+	SIDE_BUY,
+	SIDE_SELL,
+	api_error_message,
+	normalize_side,
+	parse_domestic,
+	parse_domestic_trades,
+	parse_overseas,
+	parse_overseas_trades,
+	to_number,
+)
 
 
 class ToNumberTest(unittest.TestCase):
@@ -70,6 +80,88 @@ class ParseOverseasTest(unittest.TestCase):
 		rows = parse_overseas({'result_list': [{'stk_cd': 'TSLA', 'frgn_stk_nm': '', 'crnc_code': ''}]})
 		self.assertEqual(rows[0]['name'], 'TSLA')
 		self.assertEqual(rows[0]['currency'], 'USD')
+
+
+class NormalizeSideTest(unittest.TestCase):
+	def test_reads_direction_from_text(self):
+		self.assertEqual(normalize_side('현금매수'), SIDE_BUY)
+		self.assertEqual(normalize_side('해외주식매도'), SIDE_SELL)
+		self.assertEqual(normalize_side('매도정정'), SIDE_SELL)
+
+	def test_falls_back_when_ambiguous(self):
+		# 실제 해외 응답의 deal_kind_nm은 매수·매도 모두 '매매'로 온다.
+		self.assertEqual(normalize_side('매매', fallback=SIDE_SELL), SIDE_SELL)
+		self.assertEqual(normalize_side('', fallback=SIDE_BUY), SIDE_BUY)
+		self.assertEqual(normalize_side(None), 'other')
+
+
+class ParseDomesticTradesTest(unittest.TestCase):
+	def test_maps_fills(self):
+		rows = parse_domestic_trades({
+			'acnt_ord_cntr_prps_dtl': [{
+				'ord_no': '0001234',
+				'stk_cd': 'A005930',
+				'stk_nm': '삼성전자',
+				'io_tp_nm': '현금매수',
+				'cntr_qty': '000000010',
+				'cntr_uv': '000070000',
+				'ord_tm': '09:15:32',
+			}]
+		}, '2026-08-07', SIDE_BUY)
+
+		self.assertEqual(len(rows), 1)
+		# 종목번호 접두어(A)를 떼야 잔고의 종목코드와 맞는다.
+		self.assertEqual(rows[0]['code'], '005930')
+		self.assertEqual(rows[0]['side'], SIDE_BUY)
+		self.assertEqual(rows[0]['side_label'], '현금매수')
+		self.assertEqual(rows[0]['quantity'], 10)
+		self.assertEqual(rows[0]['amount'], 700000)
+		self.assertEqual(rows[0]['traded_on'], '2026-08-07')
+		self.assertEqual(rows[0]['traded_time'], '09:15:32')
+
+	def test_skips_unfilled_orders(self):
+		# 체결수량 0(미체결)과 주문번호 없는 행은 버린다.
+		rows = parse_domestic_trades({
+			'acnt_ord_cntr_prps_dtl': [
+				{'ord_no': '0001', 'stk_cd': 'A005930', 'cntr_qty': '0'},
+				{'stk_cd': 'A005930', 'cntr_qty': '10'},
+			]
+		}, '2026-08-07', SIDE_BUY)
+		self.assertEqual(rows, [])
+
+	def test_missing_list(self):
+		self.assertEqual(parse_domestic_trades({}, '2026-08-07', SIDE_BUY), [])
+
+
+class ParseOverseasTradesTest(unittest.TestCase):
+	def test_maps_fills(self):
+		rows = parse_overseas_trades({
+			'result_list': [{
+				'deal_no': '000000123',
+				'deal_dt': '20260806',
+				'stk_cd': 'AAPL',
+				'stk_nm': 'APPLE INC',
+				'deal_kind_nm': '매수',
+				'deal_qty': '5',
+				'uv_exrt': '180.25',
+				'fc_deal_amt': '901.25',
+				'fc_cmsn': '0.9',
+			}]
+		}, SIDE_BUY)
+
+		self.assertEqual(rows[0]['traded_on'], '2026-08-06')
+		self.assertEqual(rows[0]['code'], 'AAPL')
+		self.assertAlmostEqual(rows[0]['amount'], 901.25)
+		self.assertAlmostEqual(rows[0]['fee'], 0.9)
+		self.assertEqual(rows[0]['currency'], 'USD')
+		self.assertEqual(rows[0]['side'], SIDE_BUY)
+
+	def test_skips_cash_rows(self):
+		# 입출금 등 종목코드 없는 행은 매매내역이 아니다.
+		rows = parse_overseas_trades({
+			'result_list': [{'deal_no': '1', 'deal_dt': '20260806', 'stk_cd': '', 'rmrk_nm': '외화입금'}]
+		}, SIDE_BUY)
+		self.assertEqual(rows, [])
 
 
 class ApiErrorMessageTest(unittest.TestCase):

@@ -26,6 +26,8 @@ export interface Journal {
   title: string;
   content: string;
   status: JournalStatus;
+  /** 목록 맨 위에 고정할지. */
+  pinned: boolean;
   tickers: string[];
   tags: string[];
   tradeTypes: TradeType[];

@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/features/auth/model/auth';
 import { getJournal, listJournals } from '@/features/journal/api/server';
@@ -9,9 +10,16 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+// 탭 제목과 본문이 같은 일지를 두 번 읽지 않도록 요청 단위로 묶는다.
+const loadJournal = cache(getJournal);
+
 export async function generateMetadata({ params }: Props) {
+  const session = await auth();
   const { id } = await params;
-  return { title: `일지 ${id.slice(0, 8)} · Catch Stock` };
+  const journal = session?.user?.id ? await loadJournal(session.user.id, id) : null;
+  const title = journal?.title.trim();
+
+  return { title: title ? `${title} · Catch Stock` : '투자 일지 · Catch Stock' };
 }
 
 export default async function JournalDetailPage({ params }: Props) {
@@ -19,12 +27,12 @@ export default async function JournalDetailPage({ params }: Props) {
   if (!session?.user?.id) redirect('/login');
 
   const { id } = await params;
-  const journal = await getJournal(session.user.id, id);
+  const journal = await loadJournal(session.user.id, id);
   if (!journal) notFound();
 
   const [linked, list] = await Promise.all([
     journal.linkedJournalId
-      ? getJournal(session.user.id, journal.linkedJournalId)
+      ? loadJournal(session.user.id, journal.linkedJournalId)
       : Promise.resolve(null),
     listJournals(session.user.id),
   ]);

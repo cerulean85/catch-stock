@@ -7,6 +7,7 @@ import { LinkPending } from '@/shared/ui/LinkPending';
 import { useLocale } from '@/features/locale';
 import { formatDateTime } from '@/shared/lib/locale';
 import type { Journal } from '../model/types';
+import { JournalPinButton } from './JournalPinButton';
 import { horizonLabel, riskCheckLabel, sentimentLabel, tradeTypeLabel } from '../model/labels';
 
 function excerpt(text: string, max = 140): string {
@@ -19,14 +20,16 @@ export function JournalCard({ journal }: { journal: Journal }) {
   const { t } = locale;
 
   return (
-    <Link
-      href={`/journal/${journal.id}`}
-      className="relative block rounded-xl transition-colors hover:bg-muted/30"
-    >
+    // 핀 버튼은 링크 안에 넣을 수 없어 밖에 두고 위치만 겹친다.
+    <div className="relative h-full">
+      <Link
+        href={`/journal/${journal.id}`}
+        className="relative block h-full rounded-xl transition-colors hover:bg-muted/30"
+      >
       <LinkPending />
-      <Card className="h-full">
+      <Card className={`h-full ${journal.pinned ? 'border-primary/40' : ''}`}>
         <CardHeader className="pb-3">
-          <CardTitle className="line-clamp-2 text-base sm:text-lg">
+          <CardTitle className="line-clamp-2 pr-8 text-base sm:text-lg">
             {journal.status === 'draft' && (
               <Badge variant="outline" className="mr-1.5 align-middle text-[10px] text-amber-600 dark:text-amber-400">
                 {t('statusDraft')}
@@ -78,6 +81,12 @@ export function JournalCard({ journal }: { journal: Journal }) {
           )}
         </CardContent>
       </Card>
-    </Link>
+      </Link>
+      <JournalPinButton
+        id={journal.id}
+        pinned={journal.pinned}
+        className="absolute top-3 right-3"
+      />
+    </div>
   );
 }

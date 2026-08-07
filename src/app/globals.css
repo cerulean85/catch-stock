@@ -49,6 +49,20 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@theme {
+  /* 상단 지표 바를 자동으로 흘려보낸다. 목록을 두 벌 이어 붙여 -50%까지 이동. */
+  --animate-marquee: marquee 40s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

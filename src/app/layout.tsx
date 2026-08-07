@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/features/theme';
 import { LocaleProvider } from '@/features/locale';
+import { MarketTickerBar } from '@/features/market-ticker';
 import { Header } from '@/shared/ui/Header';
 import { Footer } from '@/shared/ui/Footer';
 
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <ThemeProvider>
           <LocaleProvider>
+            <MarketTickerBar />
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
