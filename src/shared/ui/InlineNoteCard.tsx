@@ -106,7 +106,7 @@ export function InlineNoteCard({
         )}
       </div>
 
-      <div className={`mt-4 grid gap-4 ${fields.length > 1 ? 'sm:grid-cols-3' : ''}`}>
+      <div className="mt-4 grid gap-4">
         {fields.map((field, index) => (
           <div key={field.key}>
             {field.label && (
