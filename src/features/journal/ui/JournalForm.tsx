@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, useMemo, useState } from 'react';
+import { useActionState, useMemo, useRef, useState } from 'react';
 import { FileClock, Save } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ import {
   type TradeType,
 } from '../model/types';
 import { horizonLabel, riskCheckLabel, sentimentLabel } from '../model/labels';
+import { missingRiskChecks } from '../model/gate';
 import {
   createJournalAction,
   updateJournalAction,
@@ -34,6 +35,7 @@ import {
 import { AiAssist } from './AiAssist';
 import { ChipInput } from './ChipInput';
 import { MarkdownEditor } from './MarkdownEditor';
+import { RiskGateDialog } from './RiskGateDialog';
 import { TradeTypeSelector } from './TradeTypeSelector';
 import { EMPTY_TRADE, TradeInfoFields, type TradeState } from './TradeInfoFields';
 import { useJournalDraft } from './useJournalDraft';
@@ -49,6 +51,9 @@ interface Props {
   tickerSuggestions?: string[];
   tagSuggestions?: string[];
   linkCandidates?: LinkCandidate[];
+  /** 게이트에서 읽고 넘어가도록 보여줄 내 원칙·리스크 기준. */
+  principles?: string;
+  riskCriteria?: string;
 }
 
 export interface LinkCandidate {
@@ -96,6 +101,8 @@ export function JournalForm({
   tickerSuggestions,
   tagSuggestions,
   linkCandidates = [],
+  principles = '',
+  riskCriteria = '',
 }: Props) {
   const locale = useLocale();
   const { t } = locale;
@@ -118,6 +125,10 @@ export function JournalForm({
     initial?.sentiment != null ? String(initial.sentiment) : '',
   );
   const [trade, setTrade] = useState<TradeState>(tradeFromJournal(initial));
+  // 소프트 게이트: 발행 직전에 미체크 항목을 확인시키되 막지는 않는다.
+  const [gateMissing, setGateMissing] = useState<RiskCheck[] | null>(null);
+  const publishRef = useRef<HTMLButtonElement>(null);
+  const gatePassed = useRef(false);
   const [reviewAt, setReviewAt] = useState<string>(
     initial?.reviewAt ? formatDateTimeInput(initial.reviewAt, locale) : '',
   );
@@ -405,7 +416,23 @@ export function JournalForm({
             {t('saveDraft')}
           </Button>
         )}
-        <Button type="submit" name="status" value="published" disabled={pending}>
+        <Button
+          ref={publishRef}
+          type="submit"
+          name="status"
+          value="published"
+          disabled={pending}
+          onClick={(event) => {
+            if (gatePassed.current) {
+              gatePassed.current = false;
+              return;
+            }
+            const missing = missingRiskChecks({ status: 'published', tradeTypes, riskChecks });
+            if (missing.length === 0) return;
+            event.preventDefault();
+            setGateMissing(missing);
+          }}
+        >
           <Save className="mr-2 h-4 w-4" />
           {pending
             ? t('saving')
@@ -416,6 +443,19 @@ export function JournalForm({
                 : t('saveJournal')}
         </Button>
       </div>
+
+      <RiskGateDialog
+        missing={gateMissing}
+        principles={principles}
+        riskCriteria={riskCriteria}
+        onCancel={() => setGateMissing(null)}
+        onProceed={() => {
+          setGateMissing(null);
+          // 확인을 거쳤으므로 다음 클릭은 그대로 통과시킨다.
+          gatePassed.current = true;
+          publishRef.current?.click();
+        }}
+      />
     </form>
   );
 }

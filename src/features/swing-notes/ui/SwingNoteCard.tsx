@@ -2,11 +2,18 @@
 
 import { Target } from 'lucide-react';
 import { useLocale } from '@/features/locale';
+import { GoldilocksPanel, type GoldilocksScan } from '@/features/goldilocks';
 import { InlineNoteCard } from '@/shared/ui/InlineNoteCard';
 import { SWING_NOTE_MAX } from '../model/note';
 import { saveSwingNoteAction } from '../api/actions';
 
-export function SwingNoteCard({ content }: { content: string }) {
+export function SwingNoteCard({
+  content,
+  scan,
+}: {
+  content: string;
+  scan: GoldilocksScan | null;
+}) {
   const { t } = useLocale();
 
   return (
@@ -27,6 +34,7 @@ export function SwingNoteCard({ content }: { content: string }) {
         const result = await saveSwingNoteAction(values.content);
         return result?.error ?? null;
       }}
+      footer={<GoldilocksPanel initial={scan} />}
     />
   );
 }

@@ -10,6 +10,8 @@ function makeJournal(over: Partial<Journal>): Journal {
     content: 'c',
     status: 'published',
     pinned: false,
+    processScore: null,
+    reviewNote: null,
     tickers: ['AAPL'],
     tags: [],
     tradeTypes: [],

@@ -14,6 +14,7 @@ import { MarketNoteCard } from '@/features/market-notes';
 import { getMarketNote } from '@/features/market-notes/api/server';
 import { SwingNoteCard } from '@/features/swing-notes';
 import { getSwingNote } from '@/features/swing-notes/api/server';
+import { getLatestGoldilocksScan } from '@/features/goldilocks/api/server';
 import {
   JOURNAL_SORTS,
   JOURNAL_STATUSES,
@@ -75,10 +76,11 @@ export default async function JournalIndexPage({ searchParams }: Props) {
   // 서버는 사용자의 시간대를 모르므로 기본 달만 기본 시간대로 정한다. 실제 날짜 배치는 클라이언트가 한다.
   const month = parseMonth(sp.month, new Date(), DEFAULT_TIME_ZONE);
 
-  const [principle, marketNote, swingNote, dueReviews] = await Promise.all([
+  const [principle, marketNote, swingNote, goldilocksScan, dueReviews] = await Promise.all([
     getPrinciple(session.user.id),
     getMarketNote(session.user.id),
     getSwingNote(session.user.id),
+    getLatestGoldilocksScan(session.user.id),
     listDueReviews(session.user.id, new Date()),
   ]);
 
@@ -98,7 +100,7 @@ export default async function JournalIndexPage({ searchParams }: Props) {
         <aside className="flex flex-col gap-5 rounded-xl border bg-muted/40 p-4 lg:min-h-0 lg:overflow-y-auto lg:p-5">
           <PrincipleCard content={principle} />
           <MarketNoteCard note={marketNote} />
-          <SwingNoteCard content={swingNote} />
+          <SwingNoteCard content={swingNote} scan={goldilocksScan} />
         </aside>
         {/* 우측: 투자 일지 — 기본 배경, 독립 스크롤 */}
         <section className="flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:pl-1 lg:pr-2">

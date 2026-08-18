@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDown, ArrowUp, ArrowUpDown, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ArrowDown, ArrowUp, ArrowUpDown, LineChart, RefreshCw } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -13,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useLocale } from '@/features/locale';
+import { PortfolioSummaryCard, summarize } from '@/features/portfolio';
 import { formatDateTime, formatDecimal } from '@/shared/lib/locale';
 import type { AccountBalance, Holding, HoldingGroup, SyncStatus } from '../model/types';
 import {
@@ -51,15 +53,21 @@ export function AccountBalanceView({
             </p>
           )}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={pending}
-          onClick={() => startTransition(() => router.refresh())}
-        >
-          <RefreshCw className={`mr-1.5 h-4 w-4 ${pending ? 'animate-spin' : ''}`} />
-          {pending ? t('refreshing') : t('refresh')}
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/account/performance" className={buttonVariants({ variant: 'outline' })}>
+            <LineChart className="mr-1.5 h-4 w-4" />
+            {t('performanceLink')}
+          </Link>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={() => startTransition(() => router.refresh())}
+          >
+            <RefreshCw className={`mr-1.5 h-4 w-4 ${pending ? 'animate-spin' : ''}`} />
+            {pending ? t('refreshing') : t('refresh')}
+          </Button>
+        </div>
       </header>
 
       {!sync ? (
@@ -77,6 +85,9 @@ export function AccountBalanceView({
               {t('noHoldings')}
             </p>
           ) : (
+            <PortfolioSummaryCard summary={summarize(balance)} />
+          )}
+          {isEmpty ? null : (
             <div
               className={
                 selected ? 'grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]' : undefined

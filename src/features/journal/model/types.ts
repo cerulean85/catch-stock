@@ -43,6 +43,9 @@ export interface Journal {
   linkedJournalId: string | null;
   reviewAt: Date | null;
   reviewedAt: Date | null;
+  /** 회고에서 매긴 판단 과정 점수 1~5. 아직 회고 전이면 null. */
+  processScore: number | null;
+  reviewNote: string | null;
   tradedAt: Date;
   createdAt: Date;
   updatedAt: Date;

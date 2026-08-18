@@ -44,6 +44,8 @@ function toJournal(row: DbRow): Journal {
     linkedJournalId: row.linkedJournalId,
     reviewAt: row.reviewAt,
     reviewedAt: row.reviewedAt,
+    processScore: row.processScore,
+    reviewNote: row.reviewNote,
     tradedAt: row.tradedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -407,6 +409,24 @@ export async function setJournalPinned(
   const res = await db
     .update(journals)
     .set({ pinned })
+    .where(and(eq(journals.id, id), eq(journals.userId, userId)))
+    .returning({ id: journals.id });
+  return res.length > 0;
+}
+
+/** 회고 채점 저장. 과정 점수와 메모를 남기고 검토 완료로 표시한다. */
+export async function saveJournalReview(
+  userId: string,
+  id: string,
+  input: { processScore: number; reviewNote: string; reviewedAt: Date },
+): Promise<boolean> {
+  const res = await db
+    .update(journals)
+    .set({
+      processScore: input.processScore,
+      reviewNote: input.reviewNote || null,
+      reviewedAt: input.reviewedAt,
+    })
     .where(and(eq(journals.id, id), eq(journals.userId, userId)))
     .returning({ id: journals.id });
   return res.length > 0;

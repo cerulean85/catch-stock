@@ -6,6 +6,8 @@ import {
   listLinkCandidates,
 } from '@/features/journal/api/server';
 import { JournalForm, JournalPageHeader } from '@/features/journal';
+import { getPrinciple } from '@/features/principles/api/server';
+import { getRiskCriteria } from '@/features/risk/api/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +27,11 @@ export default async function EditJournalPage({ params }: Props) {
   const journal = await getJournal(session.user.id, id);
   if (!journal) notFound();
 
-  const [suggestions, linkCandidates] = await Promise.all([
+  const [suggestions, linkCandidates, principles, riskCriteria] = await Promise.all([
     getTickerTagSuggestions(session.user.id),
     listLinkCandidates(session.user.id, id),
+    getPrinciple(session.user.id),
+    getRiskCriteria(session.user.id),
   ]);
 
   return (
@@ -40,6 +44,8 @@ export default async function EditJournalPage({ params }: Props) {
         tickerSuggestions={suggestions.tickers}
         tagSuggestions={suggestions.tags}
         linkCandidates={linkCandidates}
+        principles={principles}
+        riskCriteria={riskCriteria}
       />
     </div>
   );

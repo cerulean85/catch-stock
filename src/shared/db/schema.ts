@@ -93,6 +93,10 @@ export const journals = pgTable('journal', {
   // 재점검 예정일. 지났는데 reviewedAt이 비어 있으면 '검토 필요'로 뜬다.
   reviewAt: timestamp('reviewAt', { mode: 'date' }),
   reviewedAt: timestamp('reviewedAt', { mode: 'date' }),
+  // 회고 채점: 결과(수익/손실)는 계산으로 나오므로, 결과와 무관하게 판단 과정이
+  // 타당했는지만 1~5로 받는다. 실력과 운을 갈라 보기 위한 축이다.
+  processScore: smallint('processScore'),
+  reviewNote: text('reviewNote'),
   tradedAt: timestamp('tradedAt', { mode: 'date' }).notNull().defaultNow(),
   createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
   updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
@@ -158,6 +162,37 @@ export const riskAssessments = pgTable('riskAssessment', {
   watchlist: text('watchlist').array().notNull().default([]),
   sources: jsonb('sources').$type<{ title: string; uri: string }[]>().notNull().default([]),
   // 웹 검색을 실제로 돌렸는지. 안 돌린 평가는 화면에서 따로 표시한다.
+  searched: boolean('searched').notNull().default(false),
+  model: text('model').notNull().default(''),
+  createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
+// 골디락스 종목 탐색 1회분. 탐색할 때마다 쌓고 목록에는 가장 최근 것을 띄운다.
+export const goldilocksScans = pgTable('goldilocksScan', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('userId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  // 종목별 상세(재료·차트·수급·촉매·손절)를 그대로 보관한다.
+  candidates: jsonb('candidates')
+    .$type<
+      {
+        name: string;
+        code: string;
+        summary: string;
+        story: string;
+        chart: string;
+        supply: string;
+        catalyst: string;
+        stopLoss: string;
+      }[]
+    >()
+    .notNull()
+    .default([]),
+  note: text('note').notNull().default(''),
+  sources: jsonb('sources').$type<{ title: string; uri: string }[]>().notNull().default([]),
   searched: boolean('searched').notNull().default(false),
   model: text('model').notNull().default(''),
   createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),

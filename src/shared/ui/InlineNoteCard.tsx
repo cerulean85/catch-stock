@@ -22,6 +22,8 @@ interface Props {
   actionLabels: { edit: string; cancel: string; confirm: string; saving: string };
   /** 저장 성공이면 null, 실패면 표시할 에러 메시지. */
   onSave: (values: Record<string, string>) => Promise<string | null>;
+  /** 메모 아래에 덧붙일 내용. 편집 중에는 감춘다. */
+  footer?: ReactNode;
 }
 
 function trimAll(values: Record<string, string>): Record<string, string> {
@@ -41,6 +43,7 @@ export function InlineNoteCard({
   emptyText,
   actionLabels,
   onSave,
+  footer,
 }: Props) {
   const [saved, setSaved] = useState(values);
   const [draft, setDraft] = useState(values);
@@ -142,6 +145,7 @@ export function InlineNoteCard({
       </div>
 
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+      {footer && !editing && footer}
     </section>
   );
 }

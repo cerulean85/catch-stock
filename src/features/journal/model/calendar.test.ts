@@ -19,6 +19,8 @@ function journal(id: string, tradedAt: string): Journal {
     content: '',
     status: 'published',
     pinned: false,
+    processScore: null,
+    reviewNote: null,
     tickers: [],
     tags: [],
     tradeTypes: [],

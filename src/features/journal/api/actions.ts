@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { put } from '@vercel/blob';
 import { auth } from '@/features/auth/model/auth';
 import { journalsToCsv } from '../model/export';
+import { isValidProcessScore, REVIEW_NOTE_MAX } from '../model/review';
 import type { JournalFilters, JournalInput } from '../model/types';
 import { JournalValidationError, parseJournalInput } from '../model/validate';
 import {
@@ -13,6 +14,7 @@ import {
   getJournal,
   listAllJournals,
   markJournalReviewed,
+  saveJournalReview,
   setJournalPinned,
   updateJournal as dbUpdate,
 } from './server';
@@ -135,6 +137,25 @@ export async function setJournalPinnedAction(id: string, pinned: boolean): Promi
   await setJournalPinned(userId, id, pinned);
   revalidatePath('/journal');
   revalidatePath(`/journal/${id}`);
+}
+
+/** 회고 채점을 저장한다. 결과(수익/손실)는 계산으로 나오므로 과정 점수만 받는다. */
+export async function saveJournalReviewAction(
+  id: string,
+  processScore: number,
+  reviewNote: string,
+): Promise<{ error: string } | null> {
+  const userId = await requireUserId();
+  if (!isValidProcessScore(processScore)) return { error: '과정 점수를 선택해주세요.' };
+
+  await saveJournalReview(userId, id, {
+    processScore,
+    reviewNote: reviewNote.trim().slice(0, REVIEW_NOTE_MAX),
+    reviewedAt: new Date(),
+  });
+  revalidatePath('/journal');
+  revalidatePath(`/journal/${id}`);
+  return null;
 }
 
 /** 현재 필터에 맞는 일지 전체를 CSV 문자열로 반환. 다운로드는 클라이언트에서 처리. */

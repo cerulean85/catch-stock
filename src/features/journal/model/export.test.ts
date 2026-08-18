@@ -10,6 +10,8 @@ function makeJournal(over: Partial<Journal>): Journal {
     content: '본문 내용',
     status: 'published',
     pinned: false,
+    processScore: null,
+    reviewNote: null,
     tickers: ['AAPL'],
     tags: ['#가치투자'],
     tradeTypes: ['buy'],

@@ -16,6 +16,8 @@ function journal(id: string, title: string, tradedAt: string, tickers: string[] 
     content: '',
     status: 'published',
     pinned: false,
+    processScore: null,
+    reviewNote: null,
     tickers,
     tags: [],
     tradeTypes: [],

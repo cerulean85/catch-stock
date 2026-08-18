@@ -2,7 +2,13 @@ import { cache } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/features/auth/model/auth';
 import { getJournal, listJournals } from '@/features/journal/api/server';
-import { JournalBackButton, JournalDetail, JournalSidebarList } from '@/features/journal';
+import {
+  JournalBackButton,
+  JournalDetail,
+  JournalReviewCard,
+  JournalSidebarList,
+} from '@/features/journal';
+import { getRealizedForTickers } from '@/features/performance/api/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,11 +36,12 @@ export default async function JournalDetailPage({ params }: Props) {
   const journal = await loadJournal(session.user.id, id);
   if (!journal) notFound();
 
-  const [linked, list] = await Promise.all([
+  const [linked, list, realized] = await Promise.all([
     journal.linkedJournalId
       ? loadJournal(session.user.id, journal.linkedJournalId)
       : Promise.resolve(null),
     listJournals(session.user.id),
+    getRealizedForTickers(session.user.id, journal.tickers),
   ]);
 
   return (
@@ -44,6 +51,7 @@ export default async function JournalDetailPage({ params }: Props) {
         <section className="flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:pr-4">
           <JournalBackButton />
           <JournalDetail journal={journal} linked={linked} />
+          <JournalReviewCard journal={journal} realized={realized} />
         </section>
         {/* 우측: 일지 목록 — muted 패널, 독립 스크롤 */}
         <aside className="rounded-xl border bg-muted/40 p-4 lg:min-h-0 lg:overflow-y-auto lg:p-5">
