@@ -1,5 +1,7 @@
 """키움 응답 -> DB에 넣을 행으로 변환하는 순수 함수 모음."""
 
+import re
+
 SCOPE_DOMESTIC = 'domestic'
 SCOPE_OVERSEAS = 'overseas'
 
@@ -170,11 +172,23 @@ def parse_overseas_trades(body, side):
 	return result
 
 
+# 표현이 '관련자료가 없습니다', '조회할 자료가 없습니다'처럼 조금씩 달라 어미로 잡는다.
+NO_DATA_PATTERN = re.compile(r'자료가?\s*없습니다')
+
+
 def api_error_message(body):
-	"""키움은 HTTP 200에도 return_code로 실패를 알린다. 실패면 메시지, 정상이면 None."""
+	"""키움은 HTTP 200에도 return_code로 실패를 알린다. 실패면 메시지, 정상이면 None.
+
+	조회 기간에 체결이 없으면 키움은 '관련자료가 없습니다'를 실패처럼 돌려준다.
+	장이 쉰 날에는 늘 이 응답이라 오류로 세면 주말마다 동기화가 실패로 찍힌다.
+	빈 결과일 뿐이므로 정상으로 본다.
+	"""
 	code = body.get('return_code')
 	if code is None:
 		return None
 	if str(code) == '0':
 		return None
-	return to_text(body.get('return_msg')) or f'조회 실패 (return_code: {code})'
+	message = to_text(body.get('return_msg'))
+	if message and NO_DATA_PATTERN.search(message):
+		return None
+	return message or f'조회 실패 (return_code: {code})'

@@ -170,12 +170,26 @@ class ApiErrorMessageTest(unittest.TestCase):
 		self.assertIsNone(api_error_message({'return_code': '0'}))
 		self.assertIsNone(api_error_message({}))
 
+	def test_no_data_is_not_an_error(self):
+		# 장이 쉰 날 해외 체결을 물으면 오는 응답이다. 빈 결과일 뿐 실패가 아니다.
+		self.assertIsNone(
+			api_error_message({'return_code': 2000, 'return_msg': '501724:관련자료가 없습니다'})
+		)
+		self.assertIsNone(
+			api_error_message({'return_code': 2000, 'return_msg': '조회할 자료가 없습니다.'})
+		)
+
 	def test_error(self):
 		self.assertEqual(
 			api_error_message({'return_code': 3, 'return_msg': '토큰이 유효하지 않습니다'}),
 			'토큰이 유효하지 않습니다',
 		)
 		self.assertIn('3', api_error_message({'return_code': 3}))
+		# 같은 2000이라도 자료 없음이 아니면 그대로 오류다.
+		self.assertEqual(
+			api_error_message({'return_code': 2000, 'return_msg': '일시적으로 처리할 수 없습니다'}),
+			'일시적으로 처리할 수 없습니다',
+		)
 
 
 if __name__ == '__main__':
