@@ -30,6 +30,9 @@ export async function Header() {
           <Link href="/journal" className="text-muted-foreground hover:text-foreground">
             JOURNAL
           </Link>
+          <Link href="/macro" className="text-muted-foreground hover:text-foreground">
+            MACRO
+          </Link>
           <Link href="/account" className="text-muted-foreground hover:text-foreground">
             ACCOUNT
           </Link>
