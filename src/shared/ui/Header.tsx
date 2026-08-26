@@ -36,6 +36,14 @@ export async function Header() {
           <Link href="/account" className="text-muted-foreground hover:text-foreground">
             ACCOUNT
           </Link>
+          <a
+            href="https://kr.investing.com/economic-calendar"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            CALENDAR
+          </a>
         </nav>
         <div className="hidden items-center gap-1.5 sm:flex">
           <LocaleToggle />
