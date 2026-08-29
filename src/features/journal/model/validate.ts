@@ -1,10 +1,13 @@
 import {
+  DEFAULT_CATEGORY,
   HORIZONS,
+  JOURNAL_CATEGORIES,
   RISK_CHECKS,
   TAG_MAX_COUNT,
   TITLE_MAX,
   TRADE_TYPES,
   type Horizon,
+  type JournalCategory,
   type JournalInput,
   type JournalStatus,
   type RiskCheck,
@@ -60,6 +63,11 @@ export function parseJournalInput(form: FormData): JournalInput {
   const content = asTrimmed(form.get('content'));
   if (!content && !isDraft) throw new JournalValidationError('본문을 입력해주세요.');
 
+  const categoryRaw = asTrimmed(form.get('category'));
+  const category = (JOURNAL_CATEGORIES as readonly string[]).includes(categoryRaw)
+    ? (categoryRaw as JournalCategory)
+    : DEFAULT_CATEGORY;
+
   const tickers = parseListJSON(form.get('tickers'))
     .map((t) => t.toUpperCase())
     .slice(0, 50);
@@ -103,6 +111,7 @@ export function parseJournalInput(form: FormData): JournalInput {
     title,
     content,
     status,
+    category,
     tickers,
     tags,
     tradeTypes,

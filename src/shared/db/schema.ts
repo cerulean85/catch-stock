@@ -76,6 +76,8 @@ export const journals = pgTable('journal', {
   status: text('status').notNull().default('published'),
   // 고정한 일지는 정렬과 무관하게 목록 맨 위에 올린다.
   pinned: boolean('pinned').notNull().default(false),
+  // 'trade'(투자기록) | 'market'(시황) | 'study'(스터디). 기존 행은 모두 trade로 본다.
+  category: text('category').notNull().default('trade'),
   tickers: text('tickers').array().notNull().default([]),
   tags: text('tags').array().notNull().default([]),
   tradeTypes: text('tradeTypes').array().notNull().default([]),

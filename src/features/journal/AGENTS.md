@@ -14,6 +14,7 @@
 - 내보내기는 서버 액션이 문자열(CSV/MD)을 반환하고 다운로드는 클라이언트(`ui/download.ts`)가 처리. 파일 다운로드용 REST 라우트는 두지 않음.
 - 이미지 업로드는 `BLOB_READ_WRITE_TOKEN`이 있을 때만 활성(`uploadJournalImageAction`). 미설정 시 UI 숨김, 외부 URL 링크로 대체.
 - 수정 저장은 낙관적 잠금: 폼의 `expectedUpdatedAt`와 DB `updatedAt` 불일치 시 충돌로 거부.
+- 카테고리는 글 성격 1개(`journal.category` = `trade`(투자기록) | `market`(시황) | `study`(스터디)). 기본값·기존 행은 `trade`. 목록 필터는 `?category=`이고, UI는 목록 상단 상시 노출 탭(`ui/CategoryTabs.tsx`) — 셀렉트로 되돌리지 않음. 라벨은 `model/labels.ts::categoryLabel`.
 - 임시저장은 DB 상태값(`journal.status` = `draft` | `published`). 초안은 본문·종목 없이 저장 가능하지만 제목은 필수(`validate.ts`). 발행된 일지는 다시 초안으로 되돌리지 않음. 통계(`getJournalStats`)는 초안 제외.
 - 캘린더 보기는 `?view=calendar&month=YYYY-MM`. 날짜 계산(그리드·조회 범위·날짜별 묶기)은 `model/calendar.ts` 순수 함수만 사용. 서버는 시간대를 모르므로 그리드 범위를 앞뒤 하루씩 넓혀 조회하고, 실제 날짜 배치는 클라이언트가 사용자 시간대로 한다.
 - AI 보조(태그 추천/본문 초안)는 `api/ai.ts`(`@anthropic-ai/sdk`, 모델 기본값 `claude-opus-4-8`, `JOURNAL_AI_MODEL`로 교체 가능). `ANTHROPIC_API_KEY`가 있을 때만 활성(`aiEnabled`), 없으면 UI 숨김.

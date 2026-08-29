@@ -148,6 +148,13 @@
       "when": 1786716798814,
       "tag": "0020_volatile_winter_soldier",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1787985856164,
+      "tag": "0021_curvy_moonstone",
+      "breakpoints": true
     }
   ]
 }

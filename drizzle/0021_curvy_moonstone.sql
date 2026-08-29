@@ -1,0 +1,1 @@
+ALTER TABLE "journal" ADD COLUMN "category" text DEFAULT 'trade' NOT NULL;

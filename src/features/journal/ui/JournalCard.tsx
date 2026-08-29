@@ -8,7 +8,13 @@ import { useLocale } from '@/features/locale';
 import { formatDateTime } from '@/shared/lib/locale';
 import type { Journal } from '../model/types';
 import { JournalPinButton } from './JournalPinButton';
-import { horizonLabel, riskCheckLabel, sentimentLabel, tradeTypeLabel } from '../model/labels';
+import {
+  categoryLabel,
+  horizonLabel,
+  riskCheckLabel,
+  sentimentLabel,
+  tradeTypeLabel,
+} from '../model/labels';
 
 function excerpt(text: string, max = 140): string {
   const flat = text.replace(/[#*>`_~\-\[\]]/g, '').replace(/\s+/g, ' ').trim();
@@ -37,7 +43,10 @@ export function JournalCard({ journal }: { journal: Journal }) {
             )}
             {journal.title}
           </CardTitle>
-          <p className="text-xs text-muted-foreground tabular-nums">
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+            <Badge variant="secondary" className="text-[10px]">
+              {categoryLabel(journal.category, t)}
+            </Badge>
             {formatDateTime(journal.tradedAt, locale)}
           </p>
         </CardHeader>

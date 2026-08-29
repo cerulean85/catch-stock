@@ -14,6 +14,7 @@ export function journalToMarkdown(journal: Journal): string {
   const { totalCost, pnlAmount, returnPct } = computeTradeMetrics(journal);
   const lines: string[] = ['---'];
   lines.push(`title: ${journal.title}`);
+  lines.push(`category: ${journal.category}`);
   lines.push(`tradedAt: ${isoMinutes(journal.tradedAt)}`);
   if (journal.tickers.length) lines.push(`tickers: ${journal.tickers.join(', ')}`);
   if (journal.tags.length) lines.push(`tags: ${journal.tags.join(', ')}`);
@@ -34,6 +35,7 @@ export function journalToMarkdown(journal: Journal): string {
 const CSV_COLUMNS = [
   'id',
   'tradedAt',
+  'category',
   'title',
   'tickers',
   'tags',
@@ -62,6 +64,7 @@ export function journalsToCsv(journals: Journal[]): string {
       [
         j.id,
         isoMinutes(j.tradedAt),
+        j.category,
         j.title,
         j.tickers.join(' '),
         j.tags.join(' '),

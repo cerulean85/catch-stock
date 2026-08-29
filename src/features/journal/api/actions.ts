@@ -101,6 +101,7 @@ export async function cloneJournalAction(id: string): Promise<void> {
     title: `${src.title} (복사본)`,
     content: src.content,
     status: 'draft',
+    category: src.category,
     tickers: src.tickers,
     tags: src.tags,
     tradeTypes: src.tradeTypes,

@@ -16,10 +16,13 @@ import { SwingNoteCard } from '@/features/swing-notes';
 import { getSwingNote } from '@/features/swing-notes/api/server';
 import { getLatestGoldilocksScan } from '@/features/goldilocks/api/server';
 import {
+  DEFAULT_VIEW,
+  JOURNAL_CATEGORIES,
   JOURNAL_SORTS,
   JOURNAL_STATUSES,
   JOURNAL_VIEWS,
   TRADE_TYPES,
+  type JournalCategory,
   type JournalFilters,
   type JournalSort,
   type JournalStatus,
@@ -40,6 +43,7 @@ interface Props {
     ticker?: string;
     tag?: string;
     tradeType?: string;
+    category?: string;
     sort?: string;
     status?: string;
     page?: string;
@@ -61,6 +65,9 @@ export default async function JournalIndexPage({ searchParams }: Props) {
     tradeType: (TRADE_TYPES as readonly string[]).includes(sp.tradeType ?? '')
       ? (sp.tradeType as TradeType)
       : undefined,
+    category: (JOURNAL_CATEGORIES as readonly string[]).includes(sp.category ?? '')
+      ? (sp.category as JournalCategory)
+      : undefined,
     status: (JOURNAL_STATUSES as readonly string[]).includes(sp.status ?? '')
       ? (sp.status as JournalStatus)
       : undefined,
@@ -72,7 +79,7 @@ export default async function JournalIndexPage({ searchParams }: Props) {
 
   const view = (JOURNAL_VIEWS as readonly string[]).includes(sp.view ?? '')
     ? (sp.view as JournalView)
-    : 'grid';
+    : DEFAULT_VIEW;
   // 서버는 사용자의 시간대를 모르므로 기본 달만 기본 시간대로 정한다. 실제 날짜 배치는 클라이언트가 한다.
   const month = parseMonth(sp.month, new Date(), DEFAULT_TIME_ZONE);
 

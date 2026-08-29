@@ -17,6 +17,11 @@ export type RiskCheck = (typeof RISK_CHECKS)[number];
 export const JOURNAL_STATUSES = ['draft', 'published'] as const;
 export type JournalStatus = (typeof JOURNAL_STATUSES)[number];
 
+/** 글의 성격. 투자기록(trade) / 시황(market) / 스터디(study) 중 하나. */
+export const JOURNAL_CATEGORIES = ['trade', 'market', 'study'] as const;
+export type JournalCategory = (typeof JOURNAL_CATEGORIES)[number];
+export const DEFAULT_CATEGORY: JournalCategory = 'trade';
+
 export const TITLE_MAX = 100;
 export const TAG_MAX_COUNT = 15;
 
@@ -26,6 +31,7 @@ export interface Journal {
   title: string;
   content: string;
   status: JournalStatus;
+  category: JournalCategory;
   /** 목록 맨 위에 고정할지. */
   pinned: boolean;
   tickers: string[];
@@ -55,6 +61,7 @@ export interface JournalInput {
   title: string;
   content: string;
   status: JournalStatus;
+  category: JournalCategory;
   tickers: string[];
   tags: string[];
   tradeTypes: TradeType[];
@@ -75,16 +82,19 @@ export interface JournalInput {
 export const JOURNAL_SORTS = ['tradedAt', 'oldest', 'return', 'sentiment'] as const;
 export type JournalSort = (typeof JOURNAL_SORTS)[number];
 export const DEFAULT_SORT: JournalSort = 'tradedAt';
-export const PAGE_SIZE = 12;
+export const PAGE_SIZE = 20;
 
 export const JOURNAL_VIEWS = ['grid', 'list', 'calendar'] as const;
 export type JournalView = (typeof JOURNAL_VIEWS)[number];
+export const DEFAULT_VIEW: JournalView = 'list';
 
 export interface JournalFilters {
   q?: string;
   ticker?: string;
   tag?: string;
   tradeType?: TradeType;
+  /** 미지정이면 모든 카테고리 조회. */
+  category?: JournalCategory;
   /** 미지정이면 초안·발행 모두 조회. */
   status?: JournalStatus;
   sort?: JournalSort;

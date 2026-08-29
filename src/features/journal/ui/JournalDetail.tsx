@@ -12,7 +12,13 @@ import {
   type LocaleSettings,
 } from '@/shared/lib/locale';
 import { type Journal } from '../model/types';
-import { horizonLabel, riskCheckLabel, sentimentLabel, tradeTypeLabel } from '../model/labels';
+import {
+  categoryLabel,
+  horizonLabel,
+  riskCheckLabel,
+  sentimentLabel,
+  tradeTypeLabel,
+} from '../model/labels';
 import { computeTradeMetrics } from '../model/metrics';
 import { journalToMarkdown, slugifyTitle } from '../model/export';
 import { cloneJournalAction, markReviewedAction } from '../api/actions';
@@ -98,7 +104,8 @@ export function JournalDetail({
             <DeleteJournalButton id={journal.id} />
           </div>
         </div>
-        <p className="text-sm text-muted-foreground tabular-nums">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
+          <Badge variant="secondary">{categoryLabel(journal.category, t)}</Badge>
           {formatDateTime(journal.tradedAt, locale)}
         </p>
         <div className="flex flex-wrap gap-1.5">

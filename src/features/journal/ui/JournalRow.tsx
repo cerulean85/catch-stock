@@ -6,7 +6,7 @@ import { LinkPending } from '@/shared/ui/LinkPending';
 import { useLocale } from '@/features/locale';
 import { formatDateTime, formatNumber } from '@/shared/lib/locale';
 import { effectiveReturn } from '../model/metrics';
-import { tradeTypeLabel } from '../model/labels';
+import { categoryLabel, tradeTypeLabel } from '../model/labels';
 import type { Journal } from '../model/types';
 import { JournalPinButton } from './JournalPinButton';
 
@@ -43,6 +43,9 @@ export function JournalRow({ journal }: { journal: Journal }) {
           {journal.title}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+          <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+            {categoryLabel(journal.category, t)}
+          </Badge>
           <span className="tabular-nums">{formatDateTime(journal.tradedAt, locale)}</span>
           {journal.tickers.slice(0, 4).map((ticker) => (
             <span key={ticker} className="font-mono">

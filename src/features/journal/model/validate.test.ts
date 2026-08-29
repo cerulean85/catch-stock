@@ -37,6 +37,14 @@ describe('parseJournalInput', () => {
     expect(input.status).toBe('published');
   });
 
+  it('keeps a known category and falls back to trade otherwise', () => {
+    const base = { title: 'ok', content: 'body' };
+    expect(parseJournalInput(makeForm({ ...base, category: 'market' })).category).toBe('market');
+    expect(parseJournalInput(makeForm({ ...base, category: 'study' })).category).toBe('study');
+    expect(parseJournalInput(makeForm({ ...base, category: 'wat' })).category).toBe('trade');
+    expect(parseJournalInput(makeForm(base)).category).toBe('trade');
+  });
+
   it('normalizes tickers to uppercase and filters invalid trade types', () => {
     const fd = makeForm({
       title: 'ok',

@@ -20,6 +20,7 @@ function journal(over: Partial<Journal> = {}): Journal {
     title: '제목',
     content: '',
     status: 'published',
+    category: 'trade',
     pinned: false,
     tickers: ['AAPL'],
     tags: [],

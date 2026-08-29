@@ -28,6 +28,7 @@ function toJournal(row: DbRow): Journal {
     title: row.title,
     content: row.content,
     status: row.status as Journal['status'],
+    category: row.category as Journal['category'],
     pinned: row.pinned,
     tickers: row.tickers ?? [],
     tags: row.tags ?? [],
@@ -59,6 +60,7 @@ function toInsertValues(userId: string, input: JournalInput) {
     title: input.title,
     content: input.content,
     status: input.status,
+    category: input.category,
     tickers: input.tickers,
     tags: input.tags,
     tradeTypes: input.tradeTypes,
@@ -93,6 +95,9 @@ function buildConditions(userId: string, filters: JournalFilters): SQL[] {
   }
   if (filters.tradeType) {
     conditions.push(sql`${journals.tradeTypes} @> ARRAY[${filters.tradeType}]::text[]`);
+  }
+  if (filters.category) {
+    conditions.push(eq(journals.category, filters.category));
   }
   if (filters.status) {
     conditions.push(eq(journals.status, filters.status));

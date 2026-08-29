@@ -9,6 +9,7 @@ function makeJournal(over: Partial<Journal>): Journal {
     title: 'AAPL 매수',
     content: '본문 내용',
     status: 'published',
+    category: 'trade',
     pinned: false,
     processScore: null,
     reviewNote: null,
@@ -48,7 +49,7 @@ describe('journalsToCsv', () => {
   it('헤더 + 행, effectiveReturn 계산', () => {
     const csv = journalsToCsv([makeJournal({})]);
     const [header, row] = csv.split('\r\n');
-    expect(header.startsWith('id,tradedAt,title')).toBe(true);
+    expect(header.startsWith('id,tradedAt,category,title')).toBe(true);
     expect(row).toContain('AAPL 매수');
     expect(row.split(',')).toContain('20');
   });

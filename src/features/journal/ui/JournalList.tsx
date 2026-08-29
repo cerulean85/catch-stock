@@ -5,7 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { BarChart3, CalendarDays, LayoutGrid, List, Plus } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useLocale } from '@/features/locale';
-import type { JournalFilters, JournalListResult, JournalView } from '../model/types';
+import {
+  DEFAULT_VIEW,
+  type JournalFilters,
+  type JournalListResult,
+  type JournalView,
+} from '../model/types';
+import { CategoryTabs } from './CategoryTabs';
 import { ExportCsvButton } from './ExportCsvButton';
 import { JournalCalendar } from './JournalCalendar';
 import { JournalCard } from './JournalCard';
@@ -32,7 +38,7 @@ export function JournalList({ result, filters, view, month }: Props) {
 
   const setView = (next: JournalView) => {
     const sp = new URLSearchParams(params.toString());
-    if (next === 'grid') sp.delete('view');
+    if (next === DEFAULT_VIEW) sp.delete('view');
     else sp.set('view', next);
     sp.delete('page');
     if (next !== 'calendar') sp.delete('month');
@@ -97,6 +103,8 @@ export function JournalList({ result, filters, view, month }: Props) {
           </Link>
         </div>
       </header>
+
+      <CategoryTabs />
 
       <JournalListFilters initial={filters} />
 

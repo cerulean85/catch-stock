@@ -48,6 +48,7 @@ function makeJournal(over: Partial<Journal>): Journal {
     title: 't',
     content: 'c',
     status: 'published',
+    category: 'trade',
     pinned: false,
     processScore: null,
     reviewNote: null,

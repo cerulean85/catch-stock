@@ -16,11 +16,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  DEFAULT_CATEGORY,
   HORIZONS,
   RISK_CHECKS,
   TAG_MAX_COUNT,
   TITLE_MAX,
   type Journal,
+  type JournalCategory,
   type RiskCheck,
   type TradeType,
 } from '../model/types';
@@ -33,6 +35,7 @@ import {
   type ActionState,
 } from '../api/actions';
 import { AiAssist } from './AiAssist';
+import { CategorySelector } from './CategorySelector';
 import { ChipInput } from './ChipInput';
 import { MarkdownEditor } from './MarkdownEditor';
 import { RiskGateDialog } from './RiskGateDialog';
@@ -68,6 +71,7 @@ const DRAFT_KEY = 'catch-stock-journal-draft';
 interface DraftData {
   title: string;
   content: string;
+  category: JournalCategory;
   tickers: string[];
   tags: string[];
   tradeTypes: TradeType[];
@@ -116,6 +120,9 @@ export function JournalForm({
 
   const [title, setTitle] = useState(initial?.title ?? initialTitle ?? '');
   const [content, setContent] = useState(initial?.content ?? initialContent ?? '');
+  const [category, setCategory] = useState<JournalCategory>(
+    initial?.category ?? DEFAULT_CATEGORY,
+  );
   const [tickers, setTickers] = useState<string[]>(initial?.tickers ?? initialTickers);
   const [tags, setTags] = useState<string[]>(initial?.tags ?? initialTags);
   const [tradeTypes, setTradeTypes] = useState<TradeType[]>(initial?.tradeTypes ?? []);
@@ -138,14 +145,26 @@ export function JournalForm({
   const tradedAt = formatDateTimeInput(initial?.tradedAt ?? new Date(), locale);
 
   const draftValue = useMemo<DraftData>(
-    () => ({ title, content, tickers, tags, tradeTypes, riskChecks, horizon, sentiment, trade }),
-    [title, content, tickers, tags, tradeTypes, riskChecks, horizon, sentiment, trade],
+    () => ({
+      title,
+      content,
+      category,
+      tickers,
+      tags,
+      tradeTypes,
+      riskChecks,
+      horizon,
+      sentiment,
+      trade,
+    }),
+    [title, content, category, tickers, tags, tradeTypes, riskChecks, horizon, sentiment, trade],
   );
   const draft = useJournalDraft<DraftData>(DRAFT_KEY, !isEdit, draftValue);
 
   const applyDraft = (d: DraftData) => {
     setTitle(d.title ?? '');
     setContent(d.content ?? '');
+    setCategory(d.category ?? DEFAULT_CATEGORY);
     setTickers(d.tickers ?? []);
     setTags(d.tags ?? []);
     setTradeTypes(d.tradeTypes ?? []);
@@ -171,6 +190,7 @@ export function JournalForm({
       }}
       className="flex flex-col gap-6"
     >
+      <input type="hidden" name="category" value={category} />
       <input type="hidden" name="tickers" value={JSON.stringify(tickers)} />
       <input type="hidden" name="tags" value={JSON.stringify(tags)} />
       <input type="hidden" name="tradeTypes" value={JSON.stringify(tradeTypes)} />
@@ -228,6 +248,11 @@ export function JournalForm({
             defaultValue={tradedAt}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>{t('category')}</Label>
+        <CategorySelector value={category} onChange={setCategory} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
