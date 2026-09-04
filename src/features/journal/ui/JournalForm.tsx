@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState, useMemo, useRef, useState } from 'react';
 import { FileClock, Save } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,17 +17,25 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  CONTENT_FORMATS,
   DEFAULT_CATEGORY,
+  DEFAULT_CONTENT_FORMAT,
   HORIZONS,
   RISK_CHECKS,
   TAG_MAX_COUNT,
   TITLE_MAX,
+  type ContentFormat,
   type Journal,
   type JournalCategory,
   type RiskCheck,
   type TradeType,
 } from '../model/types';
-import { horizonLabel, riskCheckLabel, sentimentLabel } from '../model/labels';
+import {
+  contentFormatLabel,
+  horizonLabel,
+  riskCheckLabel,
+  sentimentLabel,
+} from '../model/labels';
 import { missingRiskChecks } from '../model/gate';
 import {
   createJournalAction,
@@ -72,6 +81,7 @@ interface DraftData {
   title: string;
   content: string;
   category: JournalCategory;
+  contentFormat: ContentFormat;
   tickers: string[];
   tags: string[];
   tradeTypes: TradeType[];
@@ -123,6 +133,9 @@ export function JournalForm({
   const [category, setCategory] = useState<JournalCategory>(
     initial?.category ?? DEFAULT_CATEGORY,
   );
+  const [contentFormat, setContentFormat] = useState<ContentFormat>(
+    initial?.contentFormat ?? DEFAULT_CONTENT_FORMAT,
+  );
   const [tickers, setTickers] = useState<string[]>(initial?.tickers ?? initialTickers);
   const [tags, setTags] = useState<string[]>(initial?.tags ?? initialTags);
   const [tradeTypes, setTradeTypes] = useState<TradeType[]>(initial?.tradeTypes ?? []);
@@ -149,6 +162,7 @@ export function JournalForm({
       title,
       content,
       category,
+      contentFormat,
       tickers,
       tags,
       tradeTypes,
@@ -157,7 +171,19 @@ export function JournalForm({
       sentiment,
       trade,
     }),
-    [title, content, category, tickers, tags, tradeTypes, riskChecks, horizon, sentiment, trade],
+    [
+      title,
+      content,
+      category,
+      contentFormat,
+      tickers,
+      tags,
+      tradeTypes,
+      riskChecks,
+      horizon,
+      sentiment,
+      trade,
+    ],
   );
   const draft = useJournalDraft<DraftData>(DRAFT_KEY, !isEdit, draftValue);
 
@@ -165,6 +191,7 @@ export function JournalForm({
     setTitle(d.title ?? '');
     setContent(d.content ?? '');
     setCategory(d.category ?? DEFAULT_CATEGORY);
+    setContentFormat(d.contentFormat ?? DEFAULT_CONTENT_FORMAT);
     setTickers(d.tickers ?? []);
     setTags(d.tags ?? []);
     setTradeTypes(d.tradeTypes ?? []);
@@ -191,6 +218,7 @@ export function JournalForm({
       className="flex flex-col gap-6"
     >
       <input type="hidden" name="category" value={category} />
+      <input type="hidden" name="contentFormat" value={contentFormat} />
       <input type="hidden" name="tickers" value={JSON.stringify(tickers)} />
       <input type="hidden" name="tags" value={JSON.stringify(tags)} />
       <input type="hidden" name="tradeTypes" value={JSON.stringify(tradeTypes)} />
@@ -411,12 +439,37 @@ export function JournalForm({
       )}
 
       <div className="space-y-2">
-        <Label>{t('bodyMarkdown')}</Label>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Label>{contentFormat === 'text' ? t('bodyPlainText') : t('bodyMarkdown')}</Label>
+          <div className="flex gap-2" role="group" aria-label={t('contentFormat')}>
+            {CONTENT_FORMATS.map((format) => {
+              const active = contentFormat === format;
+              return (
+                <button
+                  key={format}
+                  type="button"
+                  onClick={() => setContentFormat(format)}
+                  aria-pressed={active}
+                >
+                  <Badge
+                    variant={active ? 'default' : 'outline'}
+                    className="cursor-pointer select-none"
+                  >
+                    {contentFormatLabel(format, t)}
+                  </Badge>
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <MarkdownEditor
           name="content"
           value={content}
           onChange={setContent}
-          placeholder={t('placeholderJournalBody')}
+          format={contentFormat}
+          placeholder={
+            contentFormat === 'text' ? t('placeholderJournalBodyText') : t('placeholderJournalBody')
+          }
           imageUploadEnabled={imageUploadEnabled}
           onImageUpload={handleImageUpload}
         />

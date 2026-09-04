@@ -102,6 +102,7 @@ export async function cloneJournalAction(id: string): Promise<void> {
     content: src.content,
     status: 'draft',
     category: src.category,
+    contentFormat: src.contentFormat,
     tickers: src.tickers,
     tags: src.tags,
     tradeTypes: src.tradeTypes,

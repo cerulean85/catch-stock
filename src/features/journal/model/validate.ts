@@ -1,11 +1,14 @@
 import {
+  CONTENT_FORMATS,
   DEFAULT_CATEGORY,
+  DEFAULT_CONTENT_FORMAT,
   HORIZONS,
   JOURNAL_CATEGORIES,
   RISK_CHECKS,
   TAG_MAX_COUNT,
   TITLE_MAX,
   TRADE_TYPES,
+  type ContentFormat,
   type Horizon,
   type JournalCategory,
   type JournalInput,
@@ -68,6 +71,11 @@ export function parseJournalInput(form: FormData): JournalInput {
     ? (categoryRaw as JournalCategory)
     : DEFAULT_CATEGORY;
 
+  const formatRaw = asTrimmed(form.get('contentFormat'));
+  const contentFormat = (CONTENT_FORMATS as readonly string[]).includes(formatRaw)
+    ? (formatRaw as ContentFormat)
+    : DEFAULT_CONTENT_FORMAT;
+
   const tickers = parseListJSON(form.get('tickers'))
     .map((t) => t.toUpperCase())
     .slice(0, 50);
@@ -112,6 +120,7 @@ export function parseJournalInput(form: FormData): JournalInput {
     content,
     status,
     category,
+    contentFormat,
     tickers,
     tags,
     tradeTypes,

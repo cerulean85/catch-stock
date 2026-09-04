@@ -7,6 +7,7 @@
 - 사용자 입력은 `model/validate.ts::parseJournalInput` 한 곳에서 검증. 비즈니스 규칙(필수값, 제목 길이, 감정 1~5, 등)은 모두 여기에 모음. 필수는 제목뿐이고, 본문은 발행 시에만 필수. 종목·태그는 선택.
 - DB 행 → 도메인 객체 변환은 `api/server.ts::toJournal`만이 담당.
 - 마크다운 렌더는 `ui/MarkdownPreview.tsx` 한 곳에서. raw HTML은 비활성(`react-markdown` 기본). XSS 방지.
+- 본문 형식은 `journal.contentFormat` = `markdown` | `text`. 기본값·기존 행은 `markdown`. `text`는 상세에서 마크다운 렌더 없이 `whitespace-pre-wrap`으로 그대로 출력하고, 편집기에서는 미리보기·이미지 삽입을 감춘다. 마크다운 편집기의 미리보기는 기본 접힘(`edit` 모드)이고 분할/미리보기 버튼으로 펼친다.
 - 모든 페이지에서 `auth()` 검증 필수. 미인증 시 `redirect('/login')`.
 - 새 필드 추가 시: schema → types → validate → form 순으로 일관되게 확장.
 - 라벨(투자 유형/감정/기간/리스크) → i18n 키 매핑은 `model/labels.ts` 한 곳에서. UI에서 중복 정의 금지.

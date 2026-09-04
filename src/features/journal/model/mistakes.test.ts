@@ -10,6 +10,7 @@ function makeJournal(over: Partial<Journal>): Journal {
     content: 'c',
     status: 'published',
     category: 'trade',
+    contentFormat: 'markdown',
     pinned: false,
     processScore: null,
     reviewNote: null,

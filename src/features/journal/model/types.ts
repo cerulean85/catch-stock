@@ -22,6 +22,11 @@ export const JOURNAL_CATEGORIES = ['trade', 'market', 'study'] as const;
 export type JournalCategory = (typeof JOURNAL_CATEGORIES)[number];
 export const DEFAULT_CATEGORY: JournalCategory = 'trade';
 
+/** 본문을 어떻게 렌더할지. 마크다운(markdown) / 일반 텍스트(text). */
+export const CONTENT_FORMATS = ['markdown', 'text'] as const;
+export type ContentFormat = (typeof CONTENT_FORMATS)[number];
+export const DEFAULT_CONTENT_FORMAT: ContentFormat = 'markdown';
+
 export const TITLE_MAX = 100;
 export const TAG_MAX_COUNT = 15;
 
@@ -32,6 +37,7 @@ export interface Journal {
   content: string;
   status: JournalStatus;
   category: JournalCategory;
+  contentFormat: ContentFormat;
   /** 목록 맨 위에 고정할지. */
   pinned: boolean;
   tickers: string[];
@@ -62,6 +68,7 @@ export interface JournalInput {
   content: string;
   status: JournalStatus;
   category: JournalCategory;
+  contentFormat: ContentFormat;
   tickers: string[];
   tags: string[];
   tradeTypes: TradeType[];

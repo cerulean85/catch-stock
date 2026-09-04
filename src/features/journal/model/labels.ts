@@ -1,9 +1,13 @@
-import type { Horizon, JournalCategory, RiskCheck, TradeType } from './types';
+import type { ContentFormat, Horizon, JournalCategory, RiskCheck, TradeType } from './types';
 
 type T = (key: string) => string;
 
 export function categoryLabel(value: JournalCategory, t: T): string {
   return t({ trade: 'categoryTrade', market: 'categoryMarket', study: 'categoryStudy' }[value]);
+}
+
+export function contentFormatLabel(value: ContentFormat, t: T): string {
+  return t({ markdown: 'formatMarkdown', text: 'formatText' }[value]);
 }
 
 export function tradeTypeLabel(value: TradeType, t: T): string {

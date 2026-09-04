@@ -45,6 +45,15 @@ describe('parseJournalInput', () => {
     expect(parseJournalInput(makeForm(base)).category).toBe('trade');
   });
 
+  it('keeps a known content format and falls back to markdown otherwise', () => {
+    const base = { title: 'ok', content: 'body' };
+    const format = (fields: Record<string, string>) =>
+      parseJournalInput(makeForm(fields)).contentFormat;
+    expect(format({ ...base, contentFormat: 'text' })).toBe('text');
+    expect(format({ ...base, contentFormat: 'wat' })).toBe('markdown');
+    expect(format(base)).toBe('markdown');
+  });
+
   it('normalizes tickers to uppercase and filters invalid trade types', () => {
     const fd = makeForm({
       title: 'ok',

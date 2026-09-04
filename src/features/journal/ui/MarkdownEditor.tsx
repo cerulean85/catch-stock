@@ -5,6 +5,7 @@ import { Eye, Pencil, Columns2, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocale } from '@/features/locale';
+import type { ContentFormat } from '../model/types';
 import { MarkdownPreview } from './MarkdownPreview';
 
 type Mode = 'edit' | 'preview' | 'split';
@@ -14,6 +15,8 @@ interface Props {
   value: string;
   onChange: (next: string) => void;
   placeholder?: string;
+  /** 'text'면 미리보기·이미지 삽입 없이 순수 텍스트 입력만 제공한다. */
+  format?: ContentFormat;
   imageUploadEnabled?: boolean;
   onImageUpload?: (file: File) => Promise<string>;
 }
@@ -23,11 +26,13 @@ export function MarkdownEditor({
   value,
   onChange,
   placeholder,
+  format = 'markdown',
   imageUploadEnabled = false,
   onImageUpload,
 }: Props) {
   const { t } = useLocale();
-  const [mode, setMode] = useState<Mode>('split');
+  // 미리보기는 기본으로 접어둔다. 필요할 때만 분할/미리보기로 펼친다.
+  const [mode, setMode] = useState<Mode>('edit');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -63,63 +68,68 @@ export function MarkdownEditor({
     }
   };
 
-  const canUpload = imageUploadEnabled && !!onImageUpload;
+  const isMarkdown = format === 'markdown';
+  const canUpload = isMarkdown && imageUploadEnabled && !!onImageUpload;
+  // 일반 텍스트에는 미리보기가 없으므로 편집 화면만 보여준다.
+  const activeMode: Mode = isMarkdown ? mode : 'edit';
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1">
-        <Button
-          type="button"
-          variant={mode === 'edit' ? 'secondary' : 'ghost'}
-          size="sm"
-          onClick={() => setMode('edit')}
-        >
-          <Pencil className="mr-1.5 h-3.5 w-3.5" /> {t('editMode')}
-        </Button>
-        <Button
-          type="button"
-          variant={mode === 'split' ? 'secondary' : 'ghost'}
-          size="sm"
-          onClick={() => setMode('split')}
-          className="hidden sm:inline-flex"
-        >
-          <Columns2 className="mr-1.5 h-3.5 w-3.5" /> {t('splitMode')}
-        </Button>
-        <Button
-          type="button"
-          variant={mode === 'preview' ? 'secondary' : 'ghost'}
-          size="sm"
-          onClick={() => setMode('preview')}
-        >
-          <Eye className="mr-1.5 h-3.5 w-3.5" /> {t('preview')}
-        </Button>
-        {canUpload && (
-          <>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="ml-auto"
-              disabled={uploading}
-              onClick={() => fileRef.current?.click()}
-            >
-              <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
-              {uploading ? t('imageUploading') : t('imageAdd')}
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                void uploadFiles(e.target.files);
-                e.target.value = '';
-              }}
-            />
-          </>
-        )}
-      </div>
+      {isMarkdown && (
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant={mode === 'edit' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setMode('edit')}
+          >
+            <Pencil className="mr-1.5 h-3.5 w-3.5" /> {t('editMode')}
+          </Button>
+          <Button
+            type="button"
+            variant={mode === 'split' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setMode('split')}
+            className="hidden sm:inline-flex"
+          >
+            <Columns2 className="mr-1.5 h-3.5 w-3.5" /> {t('splitMode')}
+          </Button>
+          <Button
+            type="button"
+            variant={mode === 'preview' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setMode('preview')}
+          >
+            <Eye className="mr-1.5 h-3.5 w-3.5" /> {t('preview')}
+          </Button>
+          {canUpload && (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="ml-auto"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
+              >
+                <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
+                {uploading ? t('imageUploading') : t('imageAdd')}
+              </Button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  void uploadFiles(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+            </>
+          )}
+        </div>
+      )}
 
       {uploadError && (
         <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
@@ -129,12 +139,12 @@ export function MarkdownEditor({
 
       <div
         className={
-          mode === 'split'
+          activeMode === 'split'
             ? 'grid grid-cols-1 gap-3 sm:grid-cols-2'
             : 'grid grid-cols-1 gap-3'
         }
       >
-        {(mode === 'edit' || mode === 'split') && (
+        {(activeMode === 'edit' || activeMode === 'split') && (
           <div
             className="relative"
             onDragOver={(e) => {
@@ -165,7 +175,7 @@ export function MarkdownEditor({
             )}
           </div>
         )}
-        {(mode === 'preview' || mode === 'split') && (
+        {(activeMode === 'preview' || activeMode === 'split') && (
           <div className="min-h-[28rem] rounded-md border bg-card p-4">
             <MarkdownPreview content={value} />
           </div>

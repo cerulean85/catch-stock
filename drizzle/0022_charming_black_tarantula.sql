@@ -1,0 +1,1 @@
+ALTER TABLE "journal" ADD COLUMN "contentFormat" text DEFAULT 'markdown' NOT NULL;

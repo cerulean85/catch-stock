@@ -10,6 +10,7 @@ function journal(over: Partial<Journal>): Journal {
     content: '',
     status: 'published',
     category: 'trade',
+    contentFormat: 'markdown',
     pinned: false,
     tickers: [],
     tags: [],

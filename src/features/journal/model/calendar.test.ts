@@ -19,6 +19,7 @@ function journal(id: string, tradedAt: string): Journal {
     content: '',
     status: 'published',
     category: 'trade',
+    contentFormat: 'markdown',
     pinned: false,
     processScore: null,
     reviewNote: null,

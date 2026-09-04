@@ -78,6 +78,8 @@ export const journals = pgTable('journal', {
   pinned: boolean('pinned').notNull().default(false),
   // 'trade'(투자기록) | 'market'(시황) | 'study'(스터디). 기존 행은 모두 trade로 본다.
   category: text('category').notNull().default('trade'),
+  // 본문 렌더 방식. 'markdown' | 'text'(일반 텍스트). 기존 행은 모두 markdown으로 본다.
+  contentFormat: text('contentFormat').notNull().default('markdown'),
   tickers: text('tickers').array().notNull().default([]),
   tags: text('tags').array().notNull().default([]),
   tradeTypes: text('tradeTypes').array().notNull().default([]),

@@ -10,6 +10,7 @@ function makeJournal(over: Partial<Journal>): Journal {
     content: '본문 내용',
     status: 'published',
     category: 'trade',
+    contentFormat: 'markdown',
     pinned: false,
     processScore: null,
     reviewNote: null,

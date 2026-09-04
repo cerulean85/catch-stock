@@ -210,7 +210,13 @@ export function JournalDetail({
 
       <Separator />
 
-      <MarkdownPreview content={journal.content} />
+      {journal.contentFormat === 'text' ? (
+        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+          {journal.content}
+        </p>
+      ) : (
+        <MarkdownPreview content={journal.content} />
+      )}
     </article>
   );
 }
