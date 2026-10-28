@@ -192,3 +192,45 @@ def api_error_message(body):
 	if message and NO_DATA_PATTERN.search(message):
 		return None
 	return message or f'조회 실패 (return_code: {code})'
+
+
+def parse_realized_profit(body):
+	"""ust21530(미국주식 실현손익) 응답 -> 실현손익 요약."""
+	return {
+		'profit_usd': to_number(body.get('tot_pl_amt')),
+		'total_sell_usd': to_number(body.get('tot_sell_amt')),
+		'total_buy_usd': to_number(body.get('tot_buy_amt')),
+		'total_fee_tax_usd': to_number(body.get('tot_cmsn_tax')),
+	}
+
+
+def parse_exchange_estimate(body, exch_tp='2'):
+	"""ust31300(환전 예상 금액 조회) 응답 -> 환전 가능 금액 및 예상 환율/원화.
+	exch_tp: '2'(USD -> KRW)인 경우 sell=USD, buy=KRW.
+	"""
+	if exch_tp == '2':
+		available = to_number(body.get('sell_crnc_exmn_alow_amt')) or to_number(body.get('fc_exmn_alow_amt'))
+		expected_krw = to_number(body.get('buy_expc_amt'))
+		sell_usd = to_number(body.get('sell_expc_amt'))
+	else:
+		available = to_number(body.get('sell_crnc_exmn_alow_amt')) or to_number(body.get('krw_exmn_alow_amt'))
+		expected_krw = 0.0
+		sell_usd = to_number(body.get('buy_expc_amt'))
+
+	return {
+		'available_usd': available,
+		'exchange_rate': to_number(body.get('aplc_exrt')),
+		'expected_krw': expected_krw,
+		'sell_expc_usd': sell_usd,
+	}
+
+
+def parse_exchange_result(body):
+	"""ust31302(환전 신청) 응답 -> 환전 결과."""
+	return {
+		'received_krw': to_number(body.get('krw_exmn_amt')),
+		'sold_usd': to_number(body.get('sell_fc_amt')),
+		'exchange_rate': to_number(body.get('aplc_exrt')),
+		'return_code': str(body.get('return_code', '')),
+		'return_msg': to_text(body.get('return_msg')),
+	}

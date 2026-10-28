@@ -41,12 +41,14 @@ class KiwoomClient:
 			timeout=TIMEOUT_SEC,
 		)
 		if response.status_code != 200:
-			raise KiwoomError(f'토큰 발급 실패 (HTTP {response.status_code})')
+			raise KiwoomError(f'토큰 발급 실패 (HTTP {response.status_code}): {response.text}')
 
 		body = response.json()
 		token = body.get('token') or body.get('access_token')
 		if not token:
-			raise KiwoomError('토큰 발급 응답에 토큰이 없습니다.')
+			code = body.get('return_code')
+			msg = body.get('return_msg') or body.get('msg1') or str(body)
+			raise KiwoomError(f'토큰 발급 실패 (코드 {code}): {msg}')
 		return token
 
 	def _get_token(self):
@@ -136,6 +138,48 @@ class KiwoomClient:
 			'stk_cd': '',
 			'krw_repl_skip_yn': 'Y',  # 원화대용 입출금 제외
 		}, on_page)
+
+	def fetch_overseas_profit(self, start_dt, end_dt):
+		"""ust21530 미국주식 실현손익. 기간별 실현손익(tot_pl_amt 등) 조회.
+		start_dt, end_dt: 'YYYYMMDD'
+		"""
+		body, _ = self.request('/api/us/acnt', 'ust21530', {
+			'strt_dt': start_dt,
+			'end_dt': end_dt,
+			'fc_krw_tp': '0',  # 0:외화
+		})
+		return body
+
+	def fetch_exchange_estimate(self, exch_tp='2', fc_exmn_amt=''):
+		"""ust31300 환전 예상 금액 및 외화/원화 환전가능금액 조회.
+		exch_tp: '1'(KRW->USD), '2'(USD->KRW)
+		fc_exmn_amt: 매도통화기준 환전금액 (빈 문자열이면 환전가능금액만 조회)
+		"""
+		body, _ = self.request('/api/us/exchange', 'ust31300', {
+			'exch_tp': exch_tp,
+			'fc_exmn_amt': str(fc_exmn_amt) if fc_exmn_amt else '',
+		})
+		return body
+
+	def fetch_exchange_rate(self, exch_tp='2'):
+		"""ust31301 환율 조회.
+		exch_tp: '1'(KRW->USD), '2'(USD->KRW)
+		"""
+		body, _ = self.request('/api/us/exchange', 'ust31301', {
+			'exch_tp': exch_tp,
+		})
+		return body
+
+	def request_exchange(self, exch_tp='2', fc_exmn_amt='0'):
+		"""ust31302 환전 신청.
+		exch_tp: '1'(KRW->USD), '2'(USD->KRW)
+		fc_exmn_amt: 매도통화기준 환전금액 (소수점 둘째자리까지)
+		"""
+		body, _ = self.request('/api/us/exchange', 'ust31302', {
+			'exch_tp': exch_tp,
+			'fc_exmn_amt': str(fc_exmn_amt),
+		})
+		return body
 
 
 class _Unauthorized(Exception):

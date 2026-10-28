@@ -258,6 +258,24 @@ export const accountSyncs = pgTable('accountSync', {
   syncedAt: timestamp('syncedAt', { mode: 'date' }).notNull().defaultNow(),
 });
 
+// 매월 21일 미국주식 수익 환전 이력.
+export const accountExchanges = pgTable('accountExchange', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  executedAt: timestamp('executedAt', { mode: 'date' }).notNull().defaultNow(),
+  periodStart: text('periodStart').notNull(), // 'YYYY-MM-DD'
+  periodEnd: text('periodEnd').notNull(), // 'YYYY-MM-DD'
+  realizedProfitUsd: numeric('realizedProfitUsd').notNull().default('0'),
+  targetUsd: numeric('targetUsd').notNull().default('0'),
+  availableUsd: numeric('availableUsd').notNull().default('0'),
+  exchangedUsd: numeric('exchangedUsd').notNull().default('0'),
+  exchangeRate: numeric('exchangeRate').notNull().default('0'),
+  receivedKrw: numeric('receivedKrw').notNull().default('0'),
+  status: text('status').notNull(), // 'completed' | 'skipped_no_profit' | 'skipped_no_funds' | 'dry_run_success' | 'failed'
+  message: text('message'),
+});
+
 export const watchlistItems = pgTable(
   'watchlistItem',
   {
