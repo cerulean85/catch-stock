@@ -236,6 +236,7 @@ class RunExchangePipelineMockTest(unittest.TestCase):
 			sold_usd=200.0,
 			received_krw=280000.0,
 			exchange_rate=1400.0,
+			exchange_date=date(2026, 1, 21),
 		)
 
 	def test_custom_amount_specified(self):

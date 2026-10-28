@@ -10,6 +10,7 @@
     KIWOOM_APP_URL: 카카오톡 버튼 클릭 시 이동할 URL (기본값: https://m.kiwoom.com)
 """
 
+from datetime import datetime
 import json
 import os
 import requests
@@ -59,6 +60,7 @@ def send_exchange_notification(
 	sold_usd,
 	received_krw,
 	exchange_rate,
+	exchange_date=None,
 	app_url=None,
 	access_token=None,
 	refresh_token_val=None,
@@ -87,12 +89,19 @@ def send_exchange_notification(
 		except KakaoError as e:
 			return False, f'카카오 토큰 갱신 실패: {e}'
 
+	if exchange_date is None:
+		date_str = datetime.now().strftime('%Y-%m-%d')
+	elif hasattr(exchange_date, 'strftime'):
+		date_str = exchange_date.strftime('%Y-%m-%d')
+	else:
+		date_str = str(exchange_date)
+
 	message_text = (
-		"🔔 [CatchStock] 미국주식 수익 20% 환전 완료!\n\n"
+		f"🔔 [{date_str}] 수익 20% 환전 완료!\n\n"
 		f"• 매도 달러: ${sold_usd:,.2f} USD\n"
 		f"• 입금 원화: ₩{received_krw:,.0f} KRW\n"
 		f"• 적용 환율: {exchange_rate:,.2f} KRW/USD\n\n"
-		"신한은행으로 송금하시려면 아래 버튼을 눌러 영웅문S# 앱을 실행하세요!"
+		"송금하시려면 아래 버튼을 눌러 영웅문S# 앱을 실행하세요!"
 	)
 
 	template_object = {

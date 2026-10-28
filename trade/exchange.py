@@ -270,6 +270,7 @@ def run_exchange(
 				sold_usd=final_usd,
 				received_krw=expected_krw,
 				exchange_rate=exchange_rate,
+				exchange_date=target_date,
 			)
 			if ok:
 				log(f'▶ [카카오톡 모의 알림] 전송 완료: {kakao_msg}')
@@ -366,6 +367,7 @@ def run_exchange(
 		sold_usd=sold_usd_final,
 		received_krw=received_krw_final,
 		exchange_rate=rate_final,
+		exchange_date=target_date,
 	)
 	if ok:
 		log(f'▶ [카카오톡 알림] 전송 완료: {kakao_msg}')
