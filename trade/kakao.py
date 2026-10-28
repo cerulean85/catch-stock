@@ -75,7 +75,7 @@ def send_exchange_notification(
 	if client_secret is None:
 		client_secret = os.environ.get('KAKAO_CLIENT_SECRET')
 	mobile_link = app_url or os.environ.get('KIWOOM_APP_URL') or DEFAULT_KIWOOM_URL
-	web_link = os.environ.get('KIWOOM_WEB_URL') or DEFAULT_KIWOOM_WEB_URL
+	web_link = os.environ.get('KIWOOM_WEB_URL') or mobile_link
 
 	if not access_token and not refresh_token_val:
 		return False, 'KAKAO_ACCESS_TOKEN 또는 KAKAO_REFRESH_TOKEN이 설정되지 않아 카카오톡 알림을 건너뜁니다.'
