@@ -30,7 +30,14 @@ export default function OpenKiwoomPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-900 px-4 text-center text-white">
       <div className="rounded-2xl border border-slate-700 bg-slate-800 p-8 shadow-2xl max-w-sm w-full">
-        <div className="mb-4 text-4xl animate-bounce">🚀</div>
+        <div className="mb-4 flex justify-center">
+          {/* CatchStock Logo */}
+          <img
+            src="/logo.svg"
+            alt="CatchStock"
+            className="h-16 w-16 rounded-2xl shadow-xl border border-slate-700 bg-black p-1"
+          />
+        </div>
         <h1 className="text-xl font-bold mb-2">영웅문S# 실행 중...</h1>
         <p className="text-sm text-slate-300 mb-6 leading-relaxed">
           화면에 <strong>&apos;영웅문S#에서 여시겠습니까?&apos;</strong> 창이 뜨면 <strong>[열기]</strong>를 눌러주세요.<br />
