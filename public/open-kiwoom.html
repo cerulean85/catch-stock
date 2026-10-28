@@ -59,11 +59,12 @@
   <div class="card">
     <div class="icon">🚀</div>
     <h1>영웅문S# 실행 중...</h1>
-    <p>잠시 후 키움증권 영웅문S# 앱이 자동으로 실행됩니다.<br>자동으로 열리지 않으면 아래 버튼을 눌러주세요.</p>
+    <p>화면에 <strong>'영웅문S#에서 여시겠습니까?'</strong> 창이 뜨면 <strong>[열기]</strong>를 눌러주세요.<br>자동으로 열리지 않으면 아래 버튼을 눌러주세요.</p>
 
     <a id="app-btn" href="heromts://" class="btn btn-primary">영웅문S# 앱 열기</a>
-    <a id="intent-btn" href="intent://#Intent;scheme=heromts;package=com.kiwoom.heromts;end" class="btn btn-secondary" style="display:none;">안드로이드 앱 직접 열기</a>
-    <a href="https://m.kiwoom.com" class="btn btn-secondary">키움 모바일 웹으로 이동</a>
+    <a id="store-btn" href="https://apps.apple.com/kr/app/id1589718424" class="btn btn-secondary" style="display:none;">App Store에서 보기</a>
+    <a id="play-btn" href="https://play.google.com/store/apps/details?id=com.kiwoom.herous.ma" class="btn btn-secondary" style="display:none;">Google Play에서 보기</a>
+    <a href="https://m.kiwoom.com" class="btn btn-secondary" style="font-size:12px; opacity:0.8;">키움 모바일 웹으로 이동</a>
   </div>
 
   <script>
@@ -73,13 +74,12 @@
       var isIOS = /iphone|ipad|ipod/.test(ua);
 
       if (isAndroid) {
-        document.getElementById('intent-btn').style.display = 'block';
+        document.getElementById('app-btn').href = "intent://#Intent;scheme=heromts;package=com.kiwoom.heromts;end";
+        document.getElementById('play-btn').style.display = 'block';
         window.location.href = "intent://#Intent;scheme=heromts;package=com.kiwoom.heromts;end";
       } else if (isIOS) {
+        document.getElementById('store-btn').style.display = 'block';
         window.location.href = "heromts://";
-        setTimeout(function() {
-          window.location.href = "https://apps.apple.com/kr/app/id1589718424";
-        }, 2500);
       } else {
         window.location.href = "heromts://";
       }
